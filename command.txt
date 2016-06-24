@@ -1,0 +1,1 @@
+verilog -s top -g2005 -Wall -Wno-sensitivity-entire-vector -Wno-sensitivity-entire-array -o plab5-mcore plab5-mcore-sim-harness.v
