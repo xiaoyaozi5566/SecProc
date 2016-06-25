@@ -184,6 +184,14 @@ module plab5_mcore_ProcCacheNetAlt
     wire [prs-1:0] icache_resp_msg;
     wire           icache_resp_val;
     wire           icache_resp_rdy;
+    
+    wire [prq-1:0] dcache_req_msg;
+    wire           dcache_req_val;
+    wire           dcache_req_rdy;
+
+    wire [prs-1:0] dcache_resp_msg;
+    wire           dcache_resp_val;
+    wire           dcache_resp_rdy;
 
     // processor
 
@@ -208,13 +216,13 @@ module plab5_mcore_ProcCacheNetAlt
         .imemresp_val  (icache_resp_val),
         .imemresp_rdy  (icache_resp_rdy),
 
-        .dmemreq_msg   (dcache_net_req_in_msg[`VC_PORT_PICK_FIELD(prq,i)]),
-        .dmemreq_val   (dcache_net_req_in_val[`VC_PORT_PICK_FIELD(1,  i)]),
-        .dmemreq_rdy   (dcache_net_req_in_rdy[`VC_PORT_PICK_FIELD(1,  i)]),
-
-        .dmemresp_msg  (dcache_net_resp_out_msg[`VC_PORT_PICK_FIELD(prs,i)]),
-        .dmemresp_val  (dcache_net_resp_out_val[`VC_PORT_PICK_FIELD(1,  i)]),
-        .dmemresp_rdy  (dcache_net_resp_out_rdy[`VC_PORT_PICK_FIELD(1,  i)]),
+        .dmemreq_msg   (dcache_req_msg),
+        .dmemreq_val   (dcache_req_val),
+        .dmemreq_rdy   (dcache_req_rdy),
+                       
+        .dmemresp_msg  (dcache_resp_msg),
+        .dmemresp_val  (dcache_resp_val),
+        .dmemresp_rdy  (dcache_resp_rdy),
 
         .from_mngr_msg (proc0_from_mngr_msg),
         .from_mngr_val (proc0_from_mngr_val),
@@ -246,14 +254,14 @@ module plab5_mcore_ProcCacheNetAlt
         .imemresp_msg  (icache_resp_msg),
         .imemresp_val  (icache_resp_val),
         .imemresp_rdy  (icache_resp_rdy),
-
-        .dmemreq_msg   (dcache_net_req_in_msg[`VC_PORT_PICK_FIELD(prq,i)]),
-        .dmemreq_val   (dcache_net_req_in_val[`VC_PORT_PICK_FIELD(1,  i)]),
-        .dmemreq_rdy   (dcache_net_req_in_rdy[`VC_PORT_PICK_FIELD(1,  i)]),
-
-        .dmemresp_msg  (dcache_net_resp_out_msg[`VC_PORT_PICK_FIELD(prs,i)]),
-        .dmemresp_val  (dcache_net_resp_out_val[`VC_PORT_PICK_FIELD(1,  i)]),
-        .dmemresp_rdy  (dcache_net_resp_out_rdy[`VC_PORT_PICK_FIELD(1,  i)]),
+        
+        .dmemreq_msg   (dcache_req_msg),
+        .dmemreq_val   (dcache_req_val),
+        .dmemreq_rdy   (dcache_req_rdy),
+                       
+        .dmemresp_msg  (dcache_resp_msg),
+        .dmemresp_val  (dcache_resp_val),
+        .dmemresp_rdy  (dcache_resp_rdy),
 
         .from_mngr_msg (0),
         .from_mngr_val (1'b0),
@@ -294,7 +302,7 @@ module plab5_mcore_ProcCacheNetAlt
 
     );
 
-    // data cache
+    // $L1 data cache
 
     plab3_mem_BlockingCacheAlt
     #(
@@ -302,7 +310,36 @@ module plab5_mcore_ProcCacheNetAlt
       .p_num_banks          (p_num_cores),
       .p_opaque_nbits       (o)
     )
-    dcache
+    l1_dcache
+    (
+      .clk           (clk),
+      .reset         (reset),
+
+      .cachereq_msg  (dcache_req_msg),
+      .cachereq_val  (dcache_req_val),
+      .cachereq_rdy  (dcache_req_rdy),
+                      
+      .cacheresp_msg (dcache_resp_msg),
+      .cacheresp_val (dcache_resp_val),
+      .cacheresp_rdy (dcache_resp_rdy),
+
+      .memreq_msg    (dcache_net_req_in_msg[`VC_PORT_PICK_FIELD(prq,i)]),
+      .memreq_val    (dcache_net_req_in_val[`VC_PORT_PICK_FIELD(1,  i)]),
+      .memreq_rdy    (dcache_net_req_in_rdy[`VC_PORT_PICK_FIELD(1,  i)]),
+
+      .memresp_msg   (dcache_net_resp_out_msg[`VC_PORT_PICK_FIELD(prs,i)]),
+      .memresp_val   (dcache_net_resp_out_val[`VC_PORT_PICK_FIELD(1,  i)]),
+      .memresp_rdy   (dcache_net_resp_out_rdy[`VC_PORT_PICK_FIELD(1,  i)])
+
+    );
+    
+    plab3_mem_BlockingCacheAlt
+    #(
+      .p_mem_nbytes         (p_dcache_nbytes),
+      .p_num_banks          (p_num_cores),
+      .p_opaque_nbits       (o)
+    )
+    l2_dcache
     (
       .clk           (clk),
       .reset         (reset),
@@ -456,25 +493,26 @@ module plab5_mcore_ProcCacheNetAlt
     CORES_CACHES[0].PROC.proc.trace_module( trace );
     vc_trace_str( trace, "|" );
     CORES_CACHES[0].icache.trace_module( trace );
-    CORES_CACHES[0].dcache.trace_module( trace );
+    CORES_CACHES[0].l1_dcache.trace_module( trace );
+    CORES_CACHES[0].l2_dcache.trace_module( trace );
 
     vc_trace_str( trace, "|" );
     CORES_CACHES[1].PROC.proc.trace_module( trace );
     vc_trace_str( trace, "|" );
-    CORES_CACHES[1].icache.trace_module( trace );
-    CORES_CACHES[1].dcache.trace_module( trace );
+    CORES_CACHES[1].l1_dcache.trace_module( trace );
+    CORES_CACHES[1].l2_dcache.trace_module( trace );
 
     vc_trace_str( trace, "|" );
     CORES_CACHES[2].PROC.proc.trace_module( trace );
     vc_trace_str( trace, "|" );
-    CORES_CACHES[2].icache.trace_module( trace );
-    CORES_CACHES[2].dcache.trace_module( trace );
+    CORES_CACHES[2].l1_dcache.trace_module( trace );
+    CORES_CACHES[2].l2_dcache.trace_module( trace );
 
     vc_trace_str( trace, "|" );
     CORES_CACHES[3].PROC.proc.trace_module( trace );
     vc_trace_str( trace, "|" );
-    CORES_CACHES[3].icache.trace_module( trace );
-    CORES_CACHES[3].dcache.trace_module( trace );
+    CORES_CACHES[3].l1_dcache.trace_module( trace );
+    CORES_CACHES[3].l2_dcache.trace_module( trace );
 
     icache_refill_net.req_net.trace_module( trace );
     vc_trace_str( trace, "|" );
