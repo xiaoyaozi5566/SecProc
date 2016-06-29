@@ -9,6 +9,7 @@
 `include "vc-mem-msgs.v"
 `include "plab2-proc-PipelinedProcBypass.v"
 `include "plab3-mem-BlockingCacheAlt.v"
+`include "plab3-mem-BLockingCacheL2.v"
 `include "plab5-mcore-MemNet.v"
 
 module plab5_mcore_ProcCacheNetAlt
@@ -110,19 +111,19 @@ module plab5_mcore_ProcCacheNetAlt
 
   // declare network wires
 
-  wire [`VC_PORT_PICK_NBITS(prq,p_num_cores)-1:0] dcache_net_req_in_msg;
+  wire [`VC_PORT_PICK_NBITS(mrq,p_num_cores)-1:0] dcache_net_req_in_msg;
   wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] dcache_net_req_in_val;
   wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] dcache_net_req_in_rdy;
 
-  wire [`VC_PORT_PICK_NBITS(prq,p_num_cores)-1:0] dcache_net_req_out_msg;
+  wire [`VC_PORT_PICK_NBITS(mrq,p_num_cores)-1:0] dcache_net_req_out_msg;
   wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] dcache_net_req_out_val;
   wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] dcache_net_req_out_rdy;
 
-  wire [`VC_PORT_PICK_NBITS(prs,p_num_cores)-1:0] dcache_net_resp_in_msg;
+  wire [`VC_PORT_PICK_NBITS(mrs,p_num_cores)-1:0] dcache_net_resp_in_msg;
   wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] dcache_net_resp_in_val;
   wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] dcache_net_resp_in_rdy;
 
-  wire [`VC_PORT_PICK_NBITS(prs,p_num_cores)-1:0] dcache_net_resp_out_msg;
+  wire [`VC_PORT_PICK_NBITS(mrs,p_num_cores)-1:0] dcache_net_resp_out_msg;
   wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] dcache_net_resp_out_val;
   wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] dcache_net_resp_out_rdy;
 
@@ -307,7 +308,7 @@ module plab5_mcore_ProcCacheNetAlt
     plab3_mem_BlockingCacheAlt
     #(
       .p_mem_nbytes         (p_dcache_nbytes),
-      .p_num_banks          (p_num_cores),
+      .p_num_banks          (1),
       .p_opaque_nbits       (o)
     )
     l1_dcache
@@ -323,17 +324,19 @@ module plab5_mcore_ProcCacheNetAlt
       .cacheresp_val (dcache_resp_val),
       .cacheresp_rdy (dcache_resp_rdy),
 
-      .memreq_msg    (dcache_net_req_in_msg[`VC_PORT_PICK_FIELD(prq,i)]),
+      .memreq_msg    (dcache_net_req_in_msg[`VC_PORT_PICK_FIELD(mrq,i)]),
       .memreq_val    (dcache_net_req_in_val[`VC_PORT_PICK_FIELD(1,  i)]),
       .memreq_rdy    (dcache_net_req_in_rdy[`VC_PORT_PICK_FIELD(1,  i)]),
 
-      .memresp_msg   (dcache_net_resp_out_msg[`VC_PORT_PICK_FIELD(prs,i)]),
+      .memresp_msg   (dcache_net_resp_out_msg[`VC_PORT_PICK_FIELD(mrs,i)]),
       .memresp_val   (dcache_net_resp_out_val[`VC_PORT_PICK_FIELD(1,  i)]),
       .memresp_rdy   (dcache_net_resp_out_rdy[`VC_PORT_PICK_FIELD(1,  i)])
 
     );
     
-    plab3_mem_BlockingCacheAlt
+    // $L2 data cache
+    
+    plab3_mem_BlockingCacheL2
     #(
       .p_mem_nbytes         (p_dcache_nbytes),
       .p_num_banks          (p_num_cores),
@@ -344,11 +347,11 @@ module plab5_mcore_ProcCacheNetAlt
       .clk           (clk),
       .reset         (reset),
 
-      .cachereq_msg  (dcache_net_req_out_msg[`VC_PORT_PICK_FIELD(prq,i)]),
+      .cachereq_msg  (dcache_net_req_out_msg[`VC_PORT_PICK_FIELD(mrq,i)]),
       .cachereq_val  (dcache_net_req_out_val[`VC_PORT_PICK_FIELD(1,  i)]),
       .cachereq_rdy  (dcache_net_req_out_rdy[`VC_PORT_PICK_FIELD(1,  i)]),
 
-      .cacheresp_msg (dcache_net_resp_in_msg[`VC_PORT_PICK_FIELD(prs,i)]),
+      .cacheresp_msg (dcache_net_resp_in_msg[`VC_PORT_PICK_FIELD(mrs,i)]),
       .cacheresp_val (dcache_net_resp_in_val[`VC_PORT_PICK_FIELD(1,  i)]),
       .cacheresp_rdy (dcache_net_resp_in_rdy[`VC_PORT_PICK_FIELD(1,  i)]),
 
@@ -371,7 +374,7 @@ module plab5_mcore_ProcCacheNetAlt
   #(
     .p_mem_opaque_nbits   (o),
     .p_mem_addr_nbits     (a),
-    .p_mem_data_nbits     (d),
+    .p_mem_data_nbits     (rd),
 
     .p_num_ports          (p_num_cores),
 
