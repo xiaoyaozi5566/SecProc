@@ -254,7 +254,7 @@ module plab3_mem_BlockingCacheL2Dpath
     .read_data     (data_array_read_out),
     .write_en      (data_array_wen),
     .read_en       (data_array_ren),
-    .write_byte_en (data_array_wben),
+    .write_byte_en (16'hffff),
     .write_addr    ( { cachereq_idx, way_sel } ),
     .write_data    (refill_mux_out)
   );
