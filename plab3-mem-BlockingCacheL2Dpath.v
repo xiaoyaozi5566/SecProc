@@ -182,25 +182,13 @@ module plab3_mem_BlockingCacheL2Dpath
     .out  (cachereq_write_data)
   );
 
-
-  // Replicate cachereq_write_data
-
-  wire [`VC_MEM_REQ_MSG_DATA_NBITS(o,abw,dbw)*clw/dbw-1:0] cachereq_write_data_replicated;
-
-  genvar i;
-  generate
-    for ( i = 0; i < clw/dbw; i = i + 1 ) begin
-      assign cachereq_write_data_replicated[`VC_MEM_REQ_MSG_DATA_NBITS(o,abw,dbw)*(i+1)-1:`VC_MEM_REQ_MSG_DATA_NBITS(o,abw,dbw)*i] = cachereq_write_data;
-    end
-  endgenerate
-
   // Refill mux
 
   wire [`VC_MEM_RESP_MSG_DATA_NBITS(o,clw)-1:0] refill_mux_out;
 
   vc_Mux2 #(clw) refill_mux
   (
-    .in0  (cachereq_write_data_replicated),
+    .in0  (cachereq_write_data),
     .in1  (memresp_data_reg_out),
     .sel  (is_refill),
     .out  (refill_mux_out)
