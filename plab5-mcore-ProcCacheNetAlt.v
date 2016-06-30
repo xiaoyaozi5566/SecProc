@@ -517,9 +517,6 @@ module plab5_mcore_ProcCacheNetAlt
     CORES_CACHES[3].l1_dcache.trace_module( trace );
     CORES_CACHES[3].l2_dcache.trace_module( trace );
 
-    icache_refill_net.req_net.trace_module( trace );
-    vc_trace_str( trace, "|" );
-    icache_refill_net.resp_net.trace_module( trace );
   end
   endtask
 

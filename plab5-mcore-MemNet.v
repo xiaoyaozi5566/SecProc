@@ -8,7 +8,7 @@
 `include "vc-mem-msgs.v"
 `include "vc-net-msgs.v"
 `include "plab5-mcore-mem-net-adapters.v"
-`include "plab4-net-RingNetAlt.v"
+`include "plab4-net-RingNetBase.v"
 
 module plab5_mcore_MemNet
 #(
@@ -156,7 +156,7 @@ module plab5_mcore_MemNet
                                             resp_in_val;
   assign resp_net_out_rdy = resp_out_rdy;
 
-  plab4_net_RingNetAlt #(rq,no,ns,4) req_net
+  plab4_net_RingNetBase #(rq,no,ns,4) req_net
   (
     .clk      (clk),
     .reset    (reset),
@@ -172,7 +172,7 @@ module plab5_mcore_MemNet
 
   // response network
 
-  plab4_net_RingNetAlt #(rs,no,ns,4) resp_net
+  plab4_net_RingNetBase #(rs,no,ns,4) resp_net
   (
     .clk      (clk),
     .reset    (reset),
