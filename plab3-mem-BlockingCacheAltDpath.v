@@ -360,7 +360,7 @@ module plab3_mem_BlockingCacheAltDpath
   (
     .type   (cacheresp_type),
     .opaque (cachereq_opaque_reg_out),
-    .len    (0),
+    .len    (2'b00),
     .data   (read_byte_sel_mux_out),
     .msg    (cacheresp_msg)
   );
@@ -369,9 +369,9 @@ module plab3_mem_BlockingCacheAltDpath
   vc_MemReqMsgPack#(o,abw,clw) memreq_msg_pack
   (
     .type   (memreq_type),
-    .opaque (0),
+    .opaque (8'h00),
     .addr   (memreq_addr),
-    .len    (0),
+    .len    (4'h0),
     .data   (read_data_reg_out),
     .msg    (memreq_msg)
   );

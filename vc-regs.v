@@ -23,11 +23,9 @@ module vc_Reg
   parameter p_nbits = 1
 )(
   input                clk, // Clock input
-  output [p_nbits-1:0] q,   // Data output
+  output reg [p_nbits-1:0] q,   // Data output
   input  [p_nbits-1:0] d    // Data input (sampled on rising clk edge)
 );
-
-  reg q;
 
   always @( posedge clk )
     q <= d;
@@ -45,11 +43,9 @@ module vc_ResetReg
 )(
   input                clk,   // Clock input
   input                reset, // Sync reset input (sampled on rising edge)
-  output [p_nbits-1:0] q,     // Data output
+  output reg [p_nbits-1:0] q,     // Data output
   input  [p_nbits-1:0] d      // Data input (sampled on rising clk edge)
 );
-
-  reg q;
 
   always @( posedge clk )
     q <= reset ? p_reset_value : d;
@@ -66,12 +62,10 @@ module vc_EnReg
 )(
   input                clk,   // Clock input
   input                reset, // Sync reset input (sampled on rising edge)
-  output [p_nbits-1:0] q,     // Data output
+  output reg [p_nbits-1:0] q,     // Data output
   input  [p_nbits-1:0] d,     // Data input (sampled on rising clk edge)
   input                en     // Enable input (sampled on rising clk edge)
 );
-
-  reg q;
 
   always @( posedge clk )
     if ( en )
@@ -96,12 +90,10 @@ module vc_EnResetReg
 )(
   input                clk,   // Clock input
   input                reset, // Sync reset input (sampled on rising edge)
-  output [p_nbits-1:0] q,     // Data output
+  output reg [p_nbits-1:0] q,     // Data output
   input  [p_nbits-1:0] d,     // Data input (sampled on rising clk edge)
   input                en     // Enable input (sampled on rising clk edge)
 );
-
-  reg q;
 
   always @( posedge clk )
     if ( reset || en )

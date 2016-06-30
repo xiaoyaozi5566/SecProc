@@ -119,7 +119,7 @@ module plab5_mcore_MemReqMsgToNetMsg
   (
     .dest     (net_dest),
     .src      (p_net_src[ns-1:0]),
-    .opaque   (0),
+    .opaque   (4'h0),
     .payload  (net_payload),
 
     .msg      (net_msg)
@@ -216,7 +216,7 @@ module plab5_mcore_MemRespMsgToNetMsg
   (
     .dest     (net_dest),
     .src      (p_net_src[ns-1:0]),
-    .opaque   (0),
+    .opaque   (4'h0),
     .payload  (net_payload),
 
     .msg      (net_msg)

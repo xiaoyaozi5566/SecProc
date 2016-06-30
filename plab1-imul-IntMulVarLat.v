@@ -106,7 +106,7 @@ module plab1_imul_IntMulVarLatDpath
   vc_RightLogicalShifter#(`PLAB1_IMUL_MULDIV_REQ_MSG_B_NBITS,1) right_shift_1
   (
    .in    (right_shift_out),
-   .shamt (1),
+   .shamt (1'b1),
    .out   (right_shift_1_out)
   );
 
@@ -150,7 +150,7 @@ module plab1_imul_IntMulVarLatDpath
   vc_LeftLogicalShifter#(`PLAB1_IMUL_MULDIV_REQ_MSG_A_NBITS,1) left_shift_1
   (
    .in    (left_shift_out),
-   .shamt (1),
+   .shamt (1'b1),
    .out   (left_shift_1_out)
   );
 
