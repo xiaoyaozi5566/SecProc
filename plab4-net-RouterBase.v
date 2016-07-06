@@ -8,6 +8,8 @@
 `include "vc-crossbars.v"
 `include "vc-queues.v"
 `include "vc-mem-msgs.v"
+`include "vc-net-msgs.v"
+`include "vc-muxes.v"
 `include "plab4-net-RouterInputCtrl.v"
 `include "plab4-net-RouterInputTerminalCtrl.v"
 `include "plab4-net-RouterOutputCtrl.v"
@@ -35,44 +37,88 @@ module plab4_net_RouterBase
   input                        in0_val,
   output                       in0_rdy,
   input  [c_net_msg_nbits-1:0] in0_msg,
+  // current security domain of west input
+  input                        in0_sd,
 
   input                        in1_val,
   output                       in1_rdy,
   input  [c_net_msg_nbits-1:0] in1_msg,
+  // current security domain of terminal input
+  input                        in1_sd,
 
   input                        in2_val,
   output                       in2_rdy,
   input  [c_net_msg_nbits-1:0] in2_msg,
+  // current security domain of east input
+  input                        in2_sd,
 
   output                       out0_val,
   input                        out0_rdy,
   output [c_net_msg_nbits-1:0] out0_msg,
+  // current security domain of west output
+  output                       out0_sd,
 
   output                       out1_val,
   input                        out1_rdy,
   output [c_net_msg_nbits-1:0] out1_msg,
+  // current security domain of termianl output
+  output                       out1_sd,
 
   output                       out2_val,
   input                        out2_rdy,
-  output [c_net_msg_nbits-1:0] out2_msg
+  output [c_net_msg_nbits-1:0] out2_msg,
+  // current security domain of east output
+  output                       out2_sd
 
 );
 
+  // current security domain of the router
+  reg                          cur_sd;
+  
+  always @ (posedge clk) begin
+      cur_sd <= ~cur_sd;
+  end
   //----------------------------------------------------------------------
   // Wires
   //----------------------------------------------------------------------
 
-  wire                       in0_deq_val;
-  wire                       in0_deq_rdy;
-  wire [c_net_msg_nbits-1:0] in0_deq_msg;
+  // enqueue signals
+  wire                       in0_val_d0;
+  wire                       in0_rdy_d0;
+  wire [c_net_msg_nbits-1:0] in0_msg_d0;
+  wire                       in0_val_d1;
+  wire                       in0_rdy_d1;
+  wire [c_net_msg_nbits-1:0] in0_msg_d1;
+
+  wire                       in1_val;
+  wire                       in1_rdy;
+  wire [c_net_msg_nbits-1:0] in1_msg;
+
+  wire                       in2_val_d0;
+  wire                       in2_rdy_d0;
+  wire [c_net_msg_nbits-1:0] in2_msg_d0;
+  wire                       in2_val_d1;
+  wire                       in2_rdy_d1;
+  wire [c_net_msg_nbits-1:0] in2_msg_d1;
+  
+  // dequeue signals
+  wire                       in0_deq_val_d0;
+  wire                       in0_deq_rdy_d0;
+  wire [c_net_msg_nbits-1:0] in0_deq_msg_d0;
+  wire                       in0_deq_val_d1;
+  wire                       in0_deq_rdy_d1;
+  wire [c_net_msg_nbits-1:0] in0_deq_msg_d1;
 
   wire                       in1_deq_val;
   wire                       in1_deq_rdy;
   wire [c_net_msg_nbits-1:0] in1_deq_msg;
 
-  wire                       in2_deq_val;
-  wire                       in2_deq_rdy;
-  wire [c_net_msg_nbits-1:0] in2_deq_msg;
+  wire                       in2_deq_val_d0;
+  wire                       in2_deq_rdy_d0;
+  wire [c_net_msg_nbits-1:0] in2_deq_msg_d0;
+  wire                       in2_deq_val_d1;
+  wire                       in2_deq_rdy_d1;
+  wire [c_net_msg_nbits-1:0] in2_deq_msg_d1;
 
   //+++ gen-harness : begin insert +++++++++++++++++++++++++++++++++++++++
 // 
@@ -100,30 +146,62 @@ module plab4_net_RouterBase
   // Input queues
   //----------------------------------------------------------------------
 
-  wire [2:0]                 num_free_west;
+  wire [2:0]                 num_free_west_d0;
+  wire [2:0]                 num_free_west_d1;
 
-  wire [2:0]                 num_free_east;
-
+  wire [2:0]                 num_free_east_d0;
+  wire [2:0]                 num_free_east_d1;
+  
+  assign in0_msg_d0 = in0_msg;
+  assign in0_msg_d1 = in0_msg;
+  assign in0_val_d0 = in0_val ? (in0_sd ? 0 : 1) : 0;
+  assign in0_val_d1 = in0_val ? (in0_sd ? 1 : 0) : 0;
+  // FIX
+  assign in0_deq_rdy_d0 = in0_sel ? 0 : in0_deq_rdy;
+  assign in0_deq_rdy_d1 = in0_sel ? in0_deq_rdy : 0;
+  
   vc_Queue
   #(
     .p_type       (`VC_QUEUE_NORMAL),
     .p_msg_nbits  (c_net_msg_nbits),
     .p_num_msgs   (4)
   )
-  in0_queue
+  in0_queue_d0
   (
     .clk                (clk),
     .reset              (reset),
 
-    .enq_val            (in0_val),
-    .enq_rdy            (in0_rdy),
-    .enq_msg            (in0_msg),
+    .enq_val            (in0_val_d0),
+    .enq_rdy            (in0_rdy_d0),
+    .enq_msg            (in0_msg_d0),
 
-    .deq_val            (in0_deq_val),
-    .deq_rdy            (in0_deq_rdy),
-    .deq_msg            (in0_deq_msg),
+    .deq_val            (in0_deq_val_d0),
+    .deq_rdy            (in0_deq_rdy_d0),
+    .deq_msg            (in0_deq_msg_d0),
 
-    .num_free_entries   (num_free_west)
+    .num_free_entries   (num_free_west_d0)
+  );
+  
+  vc_Queue
+  #(
+    .p_type       (`VC_QUEUE_NORMAL),
+    .p_msg_nbits  (c_net_msg_nbits),
+    .p_num_msgs   (4)
+  )
+  in0_queue_d1
+  (
+    .clk                (clk),
+    .reset              (reset),
+
+    .enq_val            (in0_val_d1),
+    .enq_rdy            (in0_rdy_d1),
+    .enq_msg            (in0_msg_d1),
+
+    .deq_val            (in0_deq_val_d1),
+    .deq_rdy            (in0_deq_rdy_d1),
+    .deq_msg            (in0_deq_msg_d1),
+
+    .num_free_entries   (num_free_west_d1)
   );
 
   vc_Queue
@@ -146,28 +224,177 @@ module plab4_net_RouterBase
     .deq_msg    (in1_deq_msg)
   );
 
+  assign in2_msg_d0 = in2_msg;
+  assign in2_msg_d1 = in2_msg;
+  assign in2_val_d0 = in2_val ? (in2_sd ? 0 : 1) : 0;
+  assign in2_val_d1 = in2_val ? (in2_sd ? 1 : 0) : 0;
+  // FIX
+  assign in2_deq_rdy_d0 = in2_sel ? 0 : in2_deq_rdy;
+  assign in2_deq_rdy_d1 = in2_sel ? in2_deq_rdy : 0;
+  
   vc_Queue
   #(
     .p_type       (`VC_QUEUE_NORMAL),
     .p_msg_nbits  (c_net_msg_nbits),
     .p_num_msgs   (4)
   )
-  in2_queue
+  in2_queue_d0
   (
     .clk                (clk),
     .reset              (reset),
 
-    .enq_val            (in2_val),
-    .enq_rdy            (in2_rdy),
-    .enq_msg            (in2_msg),
+    .enq_val            (in2_val_d0),
+    .enq_rdy            (in2_rdy_d0),
+    .enq_msg            (in2_msg_d0),
 
-    .deq_val            (in2_deq_val),
-    .deq_rdy            (in2_deq_rdy),
-    .deq_msg            (in2_deq_msg),
+    .deq_val            (in2_deq_val_d0),
+    .deq_rdy            (in2_deq_rdy_d0),
+    .deq_msg            (in2_deq_msg_d0),
 
-    .num_free_entries   (num_free_east)
+    .num_free_entries   (num_free_east_d0)
+  );
+  
+  vc_Queue
+  #(
+    .p_type       (`VC_QUEUE_NORMAL),
+    .p_msg_nbits  (c_net_msg_nbits),
+    .p_num_msgs   (4)
+  )
+  in2_queue_d1
+  (
+    .clk                (clk),
+    .reset              (reset),
+
+    .enq_val            (in2_val_d1),
+    .enq_rdy            (in2_rdy_d1),
+    .enq_msg            (in2_msg_d1),
+
+    .deq_val            (in2_deq_val_d1),
+    .deq_rdy            (in2_deq_rdy_d1),
+    .deq_msg            (in2_deq_msg_d1),
+
+    .num_free_entries   (num_free_east_d1)
   );
 
+  //----------------------------------------------------------------------
+  // Input queue mux
+  //----------------------------------------------------------------------
+  
+  wire                       in0_deq_val;
+  wire                       in0_deq_rdy;
+  wire [c_net_msg_nbits-1:0] in0_deq_msg;
+  wire                       in0_sel;
+  wire [2:0]                 num_free_west;
+
+  wire                       in2_deq_val;
+  wire                       in2_deq_rdy;
+  wire [c_net_msg_nbits-1:0] in2_deq_msg;
+  wire                       in2_sel;
+  wire [2:0]                 num_free_east;
+  
+  // west input
+  assign in0_sel = cur_sd;
+  
+  vc_Mux2
+  #(
+  	.p_nbits		(c_net_msg_nbits)
+  )
+  in0_deq_msg_mux
+  (
+  	.in0			(in0_deq_msg_d0),
+  	.in1			(in0_deq_msg_d1),
+  	.sel			(in0_sel),
+  	.out			(in0_deq_msg)
+  );
+  
+  vc_Mux2
+  #(
+  	.p_nbits		(1)
+  )
+  in0_deq_val_mux
+  (
+  	.in0			(in0_deq_val_d0),
+  	.in1			(in0_deq_val_d1),
+  	.sel			(in0_sel),
+  	.out			(in0_deq_val)
+  );
+  
+  vc_Mux2
+  #(
+  	.p_nbits		(1)
+  )
+  in0_rdy_mux
+  (
+  	.in0			(in0_rdy_d0),
+  	.in1			(in0_rdy_d1),
+    // FIX
+  	.sel			(in0_sel),
+  	.out			(in0_rdy)
+  );
+  
+  vc_Mux2
+  #(
+  	.p_nbits		(3)
+  )
+  in0_deq_free_mux
+  (
+  	.in0			(num_free_west_d0),
+  	.in1			(num_free_west_d1),
+  	.sel			(in0_sel),
+  	.out			(num_free_west)
+  );
+  
+  // east input
+  assign in2_sel = cur_sd;
+  
+  vc_Mux2
+  #(
+  	.p_nbits		(c_net_msg_nbits)
+  )
+  in2_deq_msg_mux
+  (
+  	.in0			(in2_deq_msg_d0),
+  	.in1			(in2_deq_msg_d1),
+  	.sel			(in2_sel),
+  	.out			(in2_deq_msg)
+  );
+  
+  vc_Mux2
+  #(
+  	.p_nbits		(1)
+  )
+  in2_deq_val_mux
+  (
+  	.in0			(in2_deq_val_d0),
+  	.in1			(in2_deq_val_d1),
+  	.sel			(in2_sel),
+  	.out			(in2_deq_val)
+  );
+  
+  vc_Mux2
+  #(
+  	.p_nbits		(1)
+  )
+  in2_rdy_mux
+  (
+  	.in0			(in2_rdy_d0),
+  	.in1			(in2_rdy_d1),
+  	.sel			(in2_sel),
+  	.out			(in2_rdy)
+  );
+  
+  vc_Mux2
+  #(
+  	.p_nbits		(3)
+  )
+  in2_deq_free_mux
+  (
+  	.in0			(num_free_east_d0),
+  	.in1			(num_free_east_d1),
+  	.sel			(in2_sel),
+  	.out			(num_free_east)
+  );
+  
   //----------------------------------------------------------------------
   // Crossbar
   //----------------------------------------------------------------------
@@ -323,6 +550,8 @@ module plab4_net_RouterBase
     .out_rdy  (out0_rdy),
     .xbar_sel (xbar_sel0)
   );
+  
+  assign out0_sd = cur_sd;
 
   plab4_net_RouterOutputCtrl out1_ctrl
   (
@@ -336,6 +565,8 @@ module plab4_net_RouterBase
     .out_rdy  (out1_rdy),
     .xbar_sel (xbar_sel1)
   );
+  
+  assign out1_sd = cur_sd;
 
   plab4_net_RouterOutputCtrl out2_ctrl
   (
@@ -349,6 +580,8 @@ module plab4_net_RouterBase
     .out_rdy  (out2_rdy),
     .xbar_sel (xbar_sel2)
   );
+  
+  assign out2_sd = cur_sd;
 
   //+++ gen-harness : end cut ++++++++++++++++++++++++++++++++++++++++++++
 
