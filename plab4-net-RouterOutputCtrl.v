@@ -11,15 +11,16 @@
 
 module plab4_net_RouterOutputCtrl
 (
-  input        clk,
-  input        reset,
+  input        {L} clk,
+  input        {L} reset,
 
-  input  [2:0] reqs,
-  output [2:0] grants,
+  input  [2:0] {Domain cur_sd} reqs,
+  output [2:0] {Domain cur_sd} grants,
 
-  output       out_val,
-  input        out_rdy,
-  output [1:0] xbar_sel
+  output       {Domain cur_sd} out_val,
+  input        {Domain cur_sd} out_rdy,
+  output [1:0] {Domain cur_sd} xbar_sel,
+  input        {L} cur_sd
 );
 
   //+++ gen-harness : begin insert +++++++++++++++++++++++++++++++++++++++

@@ -9,11 +9,37 @@
 // 2 Input Mux
 //------------------------------------------------------------------------
 
+module vc_Mux2_sec
+#(
+  parameter p_nbits = 1
+)(
+  input      [p_nbits-1:0] {D0} in0,
+  input      [p_nbits-1:0] {D1} in1,
+  input                    {L}  sel,
+  output reg [p_nbits-1:0] {Domain sel} out
+);
+
+  always @(*)
+  begin
+    case ( sel )
+      1'd0 : out = in0;
+      1'd1 : out = in1;
+      default : out = {p_nbits{1'bx}};
+    endcase
+  end
+
+endmodule
+
+//------------------------------------------------------------------------
+// 2 Input Mux
+//------------------------------------------------------------------------
+
 module vc_Mux2
 #(
   parameter p_nbits = 1
 )(
-  input      [p_nbits-1:0] in0, in1,
+  input      [p_nbits-1:0] in0,
+  input      [p_nbits-1:0] in1,
   input                    sel,
   output reg [p_nbits-1:0] out
 );

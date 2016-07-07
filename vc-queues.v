@@ -366,18 +366,19 @@ module vc_Queue
   // parameters not meant to be set outside this module
   parameter c_addr_nbits = $clog2(p_num_msgs)
 )(
-  input                    clk,
-  input                    reset,
+  input                    {L} clk,
+  input                    {L} reset,
 
-  input                    enq_val,
-  output                   enq_rdy,
-  input  [p_msg_nbits-1:0] enq_msg,
+  input                    {Domain cur_sd} enq_val,
+  output                   {Domain cur_sd} enq_rdy,
+  input  [p_msg_nbits-1:0] {Domain cur_sd} enq_msg,
 
-  output                   deq_val,
-  input                    deq_rdy,
-  output [p_msg_nbits-1:0] deq_msg,
+  output                   {Domain cur_sd} deq_val,
+  input                    {Domain cur_sd} deq_rdy,
+  output [p_msg_nbits-1:0] {L} deq_msg,
 
-  output [c_addr_nbits:0]  num_free_entries
+  output [c_addr_nbits:0]  {Domain cur_sd} num_free_entries,
+  input                    {L} cur_sd
 );
 
 

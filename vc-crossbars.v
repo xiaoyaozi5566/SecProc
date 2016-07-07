@@ -57,13 +57,14 @@ module vc_Crossbar3
   input  [p_nbits-1:0]   in1,
   input  [p_nbits-1:0]   in2,
 
-  input  [1:0]           sel0,
-  input  [1:0]           sel1,
-  input  [1:0]           sel2,
+  input  [1:0]           {Domain cur_sd} sel0,
+  input  [1:0]           {Domain cur_sd} sel1,
+  input  [1:0]           {Domain cur_sd} sel2,
 
   output [p_nbits-1:0]   out0,
   output [p_nbits-1:0]   out1,
-  output [p_nbits-1:0]   out2
+  output [p_nbits-1:0]   out2,
+  input                  {L} cur_sd
 );
 
   vc_Mux3#(p_nbits) out0_mux

@@ -24,13 +24,14 @@ module plab4_net_RouterInputCtrl
 
 )
 (
-  input  [c_dest_nbits-1:0] dest,
+  input  [c_dest_nbits-1:0] {Domain cur_sd} dest,
 
-  input                     in_val,
-  output                    in_rdy,
+  input                     {Domain cur_sd} in_val,
+  output                    {Domain cur_sd} in_rdy,
 
-  output [2:0]              reqs,
-  input  [2:0]              grants
+  output [2:0]              {Domain cur_sd} reqs,
+  input  [2:0]              {Domain cur_sd} grants,
+  input                     {L} cur_sd
 );
 
   //+++ gen-harness : begin insert +++++++++++++++++++++++++++++++++++++++
