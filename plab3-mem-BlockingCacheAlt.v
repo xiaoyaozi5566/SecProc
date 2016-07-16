@@ -26,32 +26,33 @@ module plab3_mem_BlockingCacheAlt
   parameter o = p_opaque_nbits
 )
 (
-  input                                         clk,
-  input                                         reset,
+  input                                         {L} clk,
+  input                                         {L} reset,
 
   // Cache Request
 
-  input [`VC_MEM_REQ_MSG_NBITS(o,abw,dbw)-1:0]  cachereq_msg,
-  input                                         cachereq_val,
-  output                                        cachereq_rdy,
+  input [`VC_MEM_REQ_MSG_NBITS(o,abw,dbw)-1:0]  {Domain sd} cachereq_msg,
+  input                                         {Domain sd} cachereq_val,
+  output                                        {Domain sd} cachereq_rdy,
 
   // Cache Response
 
-  output [`VC_MEM_RESP_MSG_NBITS(o,dbw)-1:0]    cacheresp_msg,
-  output                                        cacheresp_val,
-  input                                         cacheresp_rdy,
+  output [`VC_MEM_RESP_MSG_NBITS(o,dbw)-1:0]    {Domain sd} cacheresp_msg,
+  output                                        {Domain sd} cacheresp_val,
+  input                                         {Domain sd} cacheresp_rdy,
 
   // Memory Request
 
-  output [`VC_MEM_REQ_MSG_NBITS(o,abw,clw)-1:0] memreq_msg,
-  output                                        memreq_val,
-  input                                         memreq_rdy,
+  output [`VC_MEM_REQ_MSG_NBITS(o,abw,clw)-1:0] {Domain sd} memreq_msg,
+  output                                        {Domain sd} memreq_val,
+  input                                         {Domain sd} memreq_rdy,
 
   // Memory Response
 
-  input [`VC_MEM_RESP_MSG_NBITS(o,clw)-1:0]     memresp_msg,
-  input                                         memresp_val,
-  output                                        memresp_rdy
+  input [`VC_MEM_RESP_MSG_NBITS(o,clw)-1:0]     {Domain sd} memresp_msg,
+  input                                         {Domain sd} memresp_val,
+  output                                        {Domain sd} memresp_rdy,
+  input                                         {L} sd
 );
 
   // calculate the index shift amount based on number of banks
@@ -63,30 +64,30 @@ module plab3_mem_BlockingCacheAlt
   //----------------------------------------------------------------------
 
   // control signals (ctrl->dpath)
-  wire [1:0]                                   amo_sel;
-  wire                                         cachereq_en;
-  wire                                         memresp_en;
-  wire                                         is_refill;
-  wire                                         tag_array_0_wen;
-  wire                                         tag_array_0_ren;
-  wire                                         tag_array_1_wen;
-  wire                                         tag_array_1_ren;
-  wire                                         way_sel;
-  wire                                         data_array_wen;
-  wire                                         data_array_ren;
-  wire [clw/8-1:0]                             data_array_wben;
-  wire                                         read_data_reg_en;
-  wire                                         read_tag_reg_en;
-  wire [$clog2(clw/dbw)-1:0]                   read_byte_sel;
-  wire [`VC_MEM_RESP_MSG_TYPE_NBITS(o,clw)-1:0] memreq_type;
-  wire [`VC_MEM_RESP_MSG_TYPE_NBITS(o,dbw)-1:0] cacheresp_type;
+  wire [1:0]                                    {Domain sd} amo_sel;
+  wire                                          {Domain sd} cachereq_en;
+  wire                                          {Domain sd} memresp_en;
+  wire                                          {Domain sd} is_refill;
+  wire                                          {Domain sd} tag_array_0_wen;
+  wire                                          {Domain sd} tag_array_0_ren;
+  wire                                          {Domain sd} tag_array_1_wen;
+  wire                                          {Domain sd} tag_array_1_ren;
+  wire                                          {Domain sd} way_sel;
+  wire                                          {Domain sd} data_array_wen;
+  wire                                          {Domain sd} data_array_ren;
+  wire [clw/8-1:0]                              {Domain sd} data_array_wben;
+  wire                                          {Domain sd} read_data_reg_en;
+  wire                                          {Domain sd} read_tag_reg_en;
+  wire [$clog2(clw/dbw)-1:0]                    {Domain sd} read_byte_sel;
+  wire [`VC_MEM_RESP_MSG_TYPE_NBITS(o,clw)-1:0] {Domain sd} memreq_type;
+  wire [`VC_MEM_RESP_MSG_TYPE_NBITS(o,dbw)-1:0] {Domain sd} cacheresp_type;
 
 
   // status signals (dpath->ctrl)
-  wire [`VC_MEM_REQ_MSG_TYPE_NBITS(o,abw,dbw)-1:0] cachereq_type;
-  wire [`VC_MEM_REQ_MSG_ADDR_NBITS(o,abw,dbw)-1:0] cachereq_addr;
-  wire                                             tag_match_0;
-  wire                                             tag_match_1;
+  wire [`VC_MEM_REQ_MSG_TYPE_NBITS(o,abw,dbw)-1:0] {Domain sd} cachereq_type;
+  wire [`VC_MEM_REQ_MSG_ADDR_NBITS(o,abw,dbw)-1:0] {Domain sd} cachereq_addr;
+  wire                                             {Domain sd} tag_match_0;
+  wire                                             {Domain sd} tag_match_1;
 
   //----------------------------------------------------------------------
   // Control
@@ -146,7 +147,8 @@ module plab3_mem_BlockingCacheAlt
    .cachereq_type     (cachereq_type),
    .cachereq_addr     (cachereq_addr),
    .tag_match_0       (tag_match_0),
-   .tag_match_1       (tag_match_1)
+   .tag_match_1       (tag_match_1),
+   .sd                (sd)
   );
 
   //----------------------------------------------------------------------
@@ -203,7 +205,8 @@ module plab3_mem_BlockingCacheAlt
    .cachereq_type     (cachereq_type),
    .cachereq_addr     (cachereq_addr),
    .tag_match_0       (tag_match_0),
-   .tag_match_1       (tag_match_1)
+   .tag_match_1       (tag_match_1),
+   .sd                (sd)
   );
 
 

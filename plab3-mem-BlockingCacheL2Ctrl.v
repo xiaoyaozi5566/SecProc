@@ -8,6 +8,8 @@
 `include "plab3-mem-DecodeWben.v"
 `include "vc-mem-msgs.v"
 `include "vc-assert.v"
+`include "vc-regfiles.v"
+`include "vc-regs.v"
 
 module plab3_mem_BlockingCacheL2Ctrl
 #(
@@ -26,54 +28,55 @@ module plab3_mem_BlockingCacheL2Ctrl
   parameter o = p_opaque_nbits
 )
 (
-  input                                               clk,
-  input                                               reset,
+  input                                               {L} clk,
+  input                                               {L} reset,
 
   // Cache Request
 
-  input                                               cachereq_val,
-  output reg                                          cachereq_rdy,
+  input                                               {Domain sd} cachereq_val,
+  output reg                                          {Domain sd} cachereq_rdy,
 
   // Cache Response
 
-  output reg                                          cacheresp_val,
-  input                                               cacheresp_rdy,
+  output reg                                          {Domain sd} cacheresp_val,
+  input                                               {Domain sd} cacheresp_rdy,
 
   // Memory Request
 
-  output reg                                          memreq_val,
-  input                                               memreq_rdy,
+  output reg                                          {Domain sd} memreq_val,
+  input                                               {Domain sd} memreq_rdy,
 
   // Memory Response
 
-  input                                               memresp_val,
-  output reg                                          memresp_rdy,
+  input                                               {Domain sd} memresp_val,
+  output reg                                          {Domain sd} memresp_rdy,
 
   // control signals (ctrl->dpath)
-  output reg [1:0]                                    amo_sel,
-  output reg                                          cachereq_en,
-  output reg                                          memresp_en,
-  output reg                                          is_refill,
-  output reg                                          tag_array_0_wen,
-  output reg                                          tag_array_0_ren,
-  output reg                                          tag_array_1_wen,
-  output reg                                          tag_array_1_ren,
-  output                                              way_sel,
-  output reg                                          data_array_wen,
-  output reg                                          data_array_ren,
+  output reg [1:0]                                    {Domain sd} amo_sel,
+  output reg                                          {Domain sd} cachereq_en,
+  output reg                                          {Domain sd} memresp_en,
+  output reg                                          {Domain sd} is_refill,
+  output reg                                          {Domain sd} tag_array_0_wen,
+  output reg                                          {Domain sd} tag_array_0_ren,
+  output reg                                          {Domain sd} tag_array_1_wen,
+  output reg                                          {Domain sd} tag_array_1_ren,
+  output                                              {Domain sd} way_sel,
+  output reg                                          {Domain sd} data_array_wen,
+  output reg                                          {Domain sd} data_array_ren,
   // width of cacheline divided by number of bits per byte
-  output reg [clw/8-1:0]                              data_array_wben,
-  output reg                                          read_data_reg_en,
-  output reg                                          read_tag_reg_en,
-  output [$clog2(clw/dbw)-1:0]                        read_byte_sel,
-  output reg [`VC_MEM_RESP_MSG_TYPE_NBITS(o,clw)-1:0] memreq_type,
-  output reg [`VC_MEM_RESP_MSG_TYPE_NBITS(o,dbw)-1:0] cacheresp_type,
+  output reg [clw/8-1:0]                              {Domain sd} data_array_wben,
+  output reg                                          {Domain sd} read_data_reg_en,
+  output reg                                          {Domain sd} read_tag_reg_en,
+  output [$clog2(clw/dbw)-1:0]                        {Domain sd} read_byte_sel,
+  output reg [`VC_MEM_RESP_MSG_TYPE_NBITS(o,clw)-1:0] {Domain sd} memreq_type,
+  output reg [`VC_MEM_RESP_MSG_TYPE_NBITS(o,dbw)-1:0] {Domain sd} cacheresp_type,
 
    // status signals (dpath->ctrl)
-  input [`VC_MEM_REQ_MSG_TYPE_NBITS(o,abw,dbw)-1:0]   cachereq_type,
-  input [`VC_MEM_REQ_MSG_ADDR_NBITS(o,abw,dbw)-1:0]   cachereq_addr,
-  input                                               tag_match_0,
-  input                                               tag_match_1
+  input [`VC_MEM_REQ_MSG_TYPE_NBITS(o,abw,dbw)-1:0]   {Domain sd} cachereq_type,
+  input [`VC_MEM_REQ_MSG_ADDR_NBITS(o,abw,dbw)-1:0]   {Domain sd} cachereq_addr,
+  input                                               {Domain sd} tag_match_0,
+  input                                               {Domain sd} tag_match_1,
+  input                                               {L} sd
  );
 
   //----------------------------------------------------------------------
@@ -112,25 +115,25 @@ module plab3_mem_BlockingCacheL2Ctrl
   // State Transitions
   //----------------------------------------------------------------------
 
-  wire in_go        = cachereq_val  && cachereq_rdy;
-  wire out_go       = cacheresp_val && cacheresp_rdy;
-  wire hit_0        = is_valid_0 && tag_match_0;
-  wire hit_1        = is_valid_1 && tag_match_1;
-  wire hit          = hit_0 || hit_1;
-  wire is_read      = cachereq_type == `VC_MEM_REQ_MSG_TYPE_READ;
-  wire is_write     = cachereq_type == `VC_MEM_REQ_MSG_TYPE_WRITE;
-  wire is_init      = cachereq_type == `VC_MEM_REQ_MSG_TYPE_WRITE_INIT;
-  wire is_amo       = amo_sel != 0;
-  wire read_hit     = is_read && hit;
-  wire write_hit    = is_write && hit;
-  wire amo_hit      = is_amo && hit;
-  wire miss_0       = !hit_0;
-  wire miss_1       = !hit_1;
-  wire refill       = (miss_0 && !is_dirty_0 && !lru_way) || (miss_1 && !is_dirty_1 && lru_way);
-  wire evict        = (miss_0 && is_dirty_0 && !lru_way) || (miss_1 && is_dirty_1 && lru_way);
+  wire {Domain sd} in_go        = cachereq_val  && cachereq_rdy;
+  wire {Domain sd} out_go       = cacheresp_val && cacheresp_rdy;
+  wire {Domain sd} hit_0        = is_valid_0 && tag_match_0;
+  wire {Domain sd} hit_1        = is_valid_1 && tag_match_1;
+  wire {Domain sd} hit          = hit_0 || hit_1;
+  wire {Domain sd} is_read      = cachereq_type == `VC_MEM_REQ_MSG_TYPE_READ;
+  wire {Domain sd} is_write     = cachereq_type == `VC_MEM_REQ_MSG_TYPE_WRITE;
+  wire {Domain sd} is_init      = cachereq_type == `VC_MEM_REQ_MSG_TYPE_WRITE_INIT;
+  wire {Domain sd} is_amo       = amo_sel != 0;
+  wire {Domain sd} read_hit     = is_read && hit;
+  wire {Domain sd} write_hit    = is_write && hit;
+  wire {Domain sd} amo_hit      = is_amo && hit;
+  wire {Domain sd} miss_0       = !hit_0;
+  wire {Domain sd} miss_1       = !hit_1;
+  wire {Domain sd} refill       = (miss_0 && !is_dirty_0 && !lru_way) || (miss_1 && !is_dirty_1 && lru_way);
+  wire {Domain sd} evict        = (miss_0 && is_dirty_0 && !lru_way) || (miss_1 && is_dirty_1 && lru_way);
 
-  reg [3:0] state_reg;
-  reg [3:0] state_next;
+  reg [3:0] {Domain sd} state_reg;
+  reg [3:0] {Domain sd} state_next;
 
   always @(*) begin
 
@@ -198,13 +201,13 @@ module plab3_mem_BlockingCacheL2Ctrl
   // Valid/Dirty bits record
   //----------------------------------------------------------------------
 
-  wire [2:0] cachereq_idx = cachereq_addr[4+p_idx_shamt +: 3];
-  reg        valid_bit_in;
-  reg        valid_bits_write_en;
-  wire       valid_bits_write_en_0 = valid_bits_write_en && !way_sel;
-  wire       valid_bits_write_en_1 = valid_bits_write_en && way_sel;
-  wire       is_valid_0;
-  wire       is_valid_1;
+  wire [2:0] {Domain sd} cachereq_idx = cachereq_addr[4+p_idx_shamt +: 3];
+  reg        {Domain sd} valid_bit_in;
+  reg        {Domain sd} valid_bits_write_en;
+  wire       {Domain sd} valid_bits_write_en_0 = valid_bits_write_en && !way_sel;
+  wire       {Domain sd} valid_bits_write_en_1 = valid_bits_write_en && way_sel;
+  wire       {Domain sd} is_valid_0;
+  wire       {Domain sd} is_valid_1;
 
   vc_ResetRegfile_1r1w#(1,8) valid_bits_0
   (
@@ -214,7 +217,8 @@ module plab3_mem_BlockingCacheL2Ctrl
     .read_data  (is_valid_0),
     .write_en   (valid_bits_write_en_0),
     .write_addr (cachereq_idx),
-    .write_data (valid_bit_in)
+    .write_data (valid_bit_in),
+    .sd         (sd)
   );
 
   vc_ResetRegfile_1r1w#(1,8) valid_bits_1
@@ -225,15 +229,16 @@ module plab3_mem_BlockingCacheL2Ctrl
     .read_data  (is_valid_1),
     .write_en   (valid_bits_write_en_1),
     .write_addr (cachereq_idx),
-    .write_data (valid_bit_in)
+    .write_data (valid_bit_in),
+    .sd         (sd)
   );
 
-  reg        dirty_bit_in;
-  reg        dirty_bits_write_en;
-  wire       dirty_bits_write_en_0 = dirty_bits_write_en && !way_sel;
-  wire       dirty_bits_write_en_1 = dirty_bits_write_en && way_sel;
-  wire       is_dirty_0;
-  wire       is_dirty_1;
+  reg        {Domain sd} dirty_bit_in;
+  reg        {Domain sd} dirty_bits_write_en;
+  wire       {Domain sd} dirty_bits_write_en_0 = dirty_bits_write_en && !way_sel;
+  wire       {Domain sd} dirty_bits_write_en_1 = dirty_bits_write_en && way_sel;
+  wire       {Domain sd} is_dirty_0;
+  wire       {Domain sd} is_dirty_1;
 
   vc_ResetRegfile_1r1w#(1,8) dirty_bits_0
   (
@@ -243,7 +248,8 @@ module plab3_mem_BlockingCacheL2Ctrl
     .read_data  (is_dirty_0),
     .write_en   (dirty_bits_write_en_0),
     .write_addr (cachereq_idx),
-    .write_data (dirty_bit_in)
+    .write_data (dirty_bit_in),
+    .sd         (sd)
   );
 
   vc_ResetRegfile_1r1w#(1,8) dirty_bits_1
@@ -254,12 +260,13 @@ module plab3_mem_BlockingCacheL2Ctrl
     .read_data  (is_dirty_1),
     .write_en   (dirty_bits_write_en_1),
     .write_addr (cachereq_idx),
-    .write_data (dirty_bit_in)
+    .write_data (dirty_bit_in),
+    .sd         (sd)
   );
 
-  reg        lru_bit_in;
-  reg        lru_bits_write_en;
-  wire       lru_way;
+  reg        {Domain sd} lru_bit_in;
+  reg        {Domain sd} lru_bits_write_en;
+  wire       {Domain sd} lru_way;
 
   vc_ResetRegfile_1r1w#(1,8) lru_bits
   (
@@ -269,7 +276,8 @@ module plab3_mem_BlockingCacheL2Ctrl
     .read_data  (lru_way),
     .write_en   (lru_bits_write_en),
     .write_addr (cachereq_idx),
-    .write_data (lru_bit_in)
+    .write_data (lru_bit_in),
+    .sd         (sd)
   );
 
   //----------------------------------------------------------------------
@@ -278,8 +286,8 @@ module plab3_mem_BlockingCacheL2Ctrl
   //   then recorded for the entire transaction
   //----------------------------------------------------------------------
 
-  reg        way_record_en;
-  reg        way_record_in;
+  reg        {Domain sd} way_record_en;
+  reg        {Domain sd} way_record_in;
 
   always @(*) begin
     if (hit) begin
@@ -296,7 +304,8 @@ module plab3_mem_BlockingCacheL2Ctrl
     .reset  (reset),
     .en     (way_record_en),
     .d      (way_record_in),
-    .q      (way_sel)
+    .q      (way_sel),
+    .sd     (sd)
   );
 
   //----------------------------------------------------------------------
@@ -316,8 +325,8 @@ module plab3_mem_BlockingCacheL2Ctrl
   localparam m_e     = `VC_MEM_REQ_MSG_TYPE_WRITE; // write to memory in an _e_vict
   localparam m_r     = `VC_MEM_REQ_MSG_TYPE_READ;  // write to memory in a _r_efill
 
-  reg tag_array_wen;
-  reg tag_array_ren;
+  reg {Domain sd} tag_array_wen;
+  reg {Domain sd} tag_array_ren;
 
   task cs
   (
@@ -410,8 +419,8 @@ module plab3_mem_BlockingCacheL2Ctrl
   // This is in control because we want to facilitate more complex patterns
   //   when we want to start supporting subword accesses
 
-  wire [1:0] cachereq_offset = cachereq_addr[3:2];
-  wire [15:0] wben_decoder_out;
+  wire [1:0]  {Domain sd} cachereq_offset = cachereq_addr[3:2];
+  wire [15:0] {Domain sd} wben_decoder_out;
 
   plab3_mem_DecoderWben#(2) wben_decoder
   (
