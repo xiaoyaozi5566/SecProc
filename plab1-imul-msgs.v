@@ -51,13 +51,14 @@ module plab1_imul_MulDivReqMsgPack
 (
   // Unpacked message
 
-  input [`PLAB1_IMUL_MULDIV_REQ_MSG_FUNC_NBITS-1:0] func,
-  input [`PLAB1_IMUL_MULDIV_REQ_MSG_A_NBITS-1:0]    a,
-  input [`PLAB1_IMUL_MULDIV_REQ_MSG_B_NBITS-1:0]    b,
+  input [`PLAB1_IMUL_MULDIV_REQ_MSG_FUNC_NBITS-1:0] {Domain sd} func,
+  input [`PLAB1_IMUL_MULDIV_REQ_MSG_A_NBITS-1:0]    {Domain sd} a,
+  input [`PLAB1_IMUL_MULDIV_REQ_MSG_B_NBITS-1:0]    {Domain sd} b,
 
   // Packed message
 
-  output [`PLAB1_IMUL_MULDIV_REQ_MSG_NBITS-1:0]     msg
+  output [`PLAB1_IMUL_MULDIV_REQ_MSG_NBITS-1:0]     {Domain sd} msg,
+  input                                             {L} sd
 );
 
   assign msg[`PLAB1_IMUL_MULDIV_REQ_MSG_FUNC_FIELD] = func;
@@ -74,13 +75,14 @@ module plab1_imul_MulDivReqMsgUnpack
 (
   // Packed message
 
-  input  [`PLAB1_IMUL_MULDIV_REQ_MSG_NBITS-1:0]      msg,
+  input  [`PLAB1_IMUL_MULDIV_REQ_MSG_NBITS-1:0]      {Domain sd} msg,
 
   // Unpacked message
 
-  output [`PLAB1_IMUL_MULDIV_REQ_MSG_FUNC_NBITS-1:0] func,
-  output [`PLAB1_IMUL_MULDIV_REQ_MSG_A_NBITS-1:0]    a,
-  output [`PLAB1_IMUL_MULDIV_REQ_MSG_B_NBITS-1:0]    b
+  output [`PLAB1_IMUL_MULDIV_REQ_MSG_FUNC_NBITS-1:0] {Domain sd} func,
+  output [`PLAB1_IMUL_MULDIV_REQ_MSG_A_NBITS-1:0]    {Domain sd} a,
+  output [`PLAB1_IMUL_MULDIV_REQ_MSG_B_NBITS-1:0]    {Domain sd} b,
+  input                                              {L} sd
 );
 
   assign a    = msg[`PLAB1_IMUL_MULDIV_REQ_MSG_A_FIELD];
@@ -95,11 +97,12 @@ endmodule
 
 module plab1_imul_MulDivReqMsgTrace
 (
-  input                                        clk,
-  input                                        reset,
-  input                                        val,
-  input                                        rdy,
-  input [`PLAB1_IMUL_MULDIV_REQ_MSG_NBITS-1:0] msg
+  input                                        {L} clk,
+  input                                        {L} reset,
+  input                                        {Domain sd} val,
+  input                                        {Domain sd} rdy,
+  input [`PLAB1_IMUL_MULDIV_REQ_MSG_NBITS-1:0] {Domain sd} msg,
+  input                                        {L} sd
 );
 
   // Local constants
@@ -112,13 +115,13 @@ module plab1_imul_MulDivReqMsgTrace
 
   // Extract fields
 
-  wire [`PLAB1_IMUL_MULDIV_REQ_MSG_FUNC_NBITS-1:0] func
+  wire [`PLAB1_IMUL_MULDIV_REQ_MSG_FUNC_NBITS-1:0] {Domain sd} func
     = msg[`PLAB1_IMUL_MULDIV_REQ_MSG_FUNC_FIELD];
 
-  wire [`PLAB1_IMUL_MULDIV_REQ_MSG_A_NBITS-1:0] a
+  wire [`PLAB1_IMUL_MULDIV_REQ_MSG_A_NBITS-1:0] {Domain sd} a
     = msg[`PLAB1_IMUL_MULDIV_REQ_MSG_A_FIELD];
 
-  wire [`PLAB1_IMUL_MULDIV_REQ_MSG_B_NBITS-1:0] b
+  wire [`PLAB1_IMUL_MULDIV_REQ_MSG_B_NBITS-1:0] {Domain sd} b
     = msg[`PLAB1_IMUL_MULDIV_REQ_MSG_B_FIELD];
 
   // Line tracing
