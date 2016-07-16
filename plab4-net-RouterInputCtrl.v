@@ -29,7 +29,7 @@ module plab4_net_RouterInputCtrl
   input                     {Domain cur_sd} in_val,
   output                    {Domain cur_sd} in_rdy,
 
-  output [2:0]              {Domain cur_sd} reqs,
+  output reg [2:0]          {Domain cur_sd} reqs,
   input  [2:0]              {Domain cur_sd} grants,
   input                     {L} cur_sd
 );
@@ -50,10 +50,8 @@ module plab4_net_RouterInputCtrl
   //----------------------------------------------------------------------
 
   // rdy is just a reductive OR of the AND of reqs and grants
-
+  
   assign in_rdy = | (reqs & grants);
-
-  reg [2:0] reqs;
 
   always @(*) begin
     if (in_val) begin

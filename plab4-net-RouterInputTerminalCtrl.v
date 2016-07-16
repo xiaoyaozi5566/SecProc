@@ -29,7 +29,7 @@ module plab4_net_RouterInputTerminalCtrl
   input [p_num_free_nbits-1:0] {Domain cur_sd} num_free_west,
   input [p_num_free_nbits-1:0] {Domain cur_sd} num_free_east,
 
-  output [2:0]                 {Domain cur_sd} reqs,
+  output reg [2:0]             {Domain cur_sd} reqs,
   input  [2:0]                 {Domain cur_sd} grants,
   input                        {L} cur_sd
 );
@@ -45,7 +45,7 @@ module plab4_net_RouterInputTerminalCtrl
 
   //+++ gen-harness : begin cut ++++++++++++++++++++++++++++++++++++++++++
 
-  wire [1:0] route;
+  wire [1:0] {Domain cur_sd} route;
 
   //----------------------------------------------------------------------
   // Greedy Route Compute
@@ -59,7 +59,8 @@ module plab4_net_RouterInputTerminalCtrl
   route_compute
   (
     .dest           (dest),
-    .route          (route)
+    .route          (route),
+    .sd             (cur_sd)
   );
 
   //----------------------------------------------------------------------
@@ -69,8 +70,6 @@ module plab4_net_RouterInputTerminalCtrl
   // rdy is just a reductive OR of the AND of reqs and grants
 
   assign in_rdy = | (reqs & grants);
-
-  reg [2:0] reqs;
 
   always @(*) begin
     if (in_val) begin

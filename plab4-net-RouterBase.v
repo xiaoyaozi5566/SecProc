@@ -288,7 +288,7 @@ module plab4_net_RouterBase
   wire [2:0]                 {Domain cur_sd} num_free_west;
   
   reg                        {Domain cur_sd} in1_deq_val;
-  reg                        {Domain cur_sd} in1_deq_rdy;
+  wire                       {Domain cur_sd} in1_deq_rdy;
   
   wire                       {Domain cur_sd} in2_deq_val;
   wire                       {Domain cur_sd} in2_deq_rdy;
@@ -296,7 +296,7 @@ module plab4_net_RouterBase
   wire [2:0]                 {Domain cur_sd} num_free_east;
   
   // West muxes
-  vc_Mux2
+  vc_Mux2_low
   #(
   	.p_nbits		(c_net_msg_nbits)
   )
@@ -359,7 +359,7 @@ module plab4_net_RouterBase
   end
           
   // East muxes
-  vc_Mux2
+  vc_Mux2_low
   #(
   	.p_nbits		(c_net_msg_nbits)
   )

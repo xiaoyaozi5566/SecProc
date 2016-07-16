@@ -35,7 +35,7 @@ module plab4_net_RouterOutputCtrl
 
   //+++ gen-harness : begin cut ++++++++++++++++++++++++++++++++++++++++++
 
-  wire [2:0] arb_reqs;
+  wire [2:0] {Domain cur_sd} arb_reqs;
 
   //----------------------------------------------------------------------
   // Round robin arbiter
@@ -51,7 +51,8 @@ module plab4_net_RouterOutputCtrl
     .reset  (reset),
 
     .reqs   (arb_reqs),
-    .grants (grants)
+    .grants (grants),
+    .sd     (cur_sd)
   );
 
   //----------------------------------------------------------------------
@@ -64,7 +65,7 @@ module plab4_net_RouterOutputCtrl
 
   assign arb_reqs = ( out_rdy ? reqs : 3'h0 );
 
-  reg [1:0] xbar_sel;
+  reg [1:0] {Domain cur_sd} xbar_sel;
 
   always @(*) begin
     if ( grants == 3'b001 )

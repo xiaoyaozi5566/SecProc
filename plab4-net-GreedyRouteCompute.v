@@ -19,14 +19,15 @@ module plab4_net_GreedyRouteCompute
   parameter c_dest_nbits = $clog2( p_num_routers )
 )
 (
-  input [c_dest_nbits-1:0] dest,
-  output reg [1:0]         route
+  input [c_dest_nbits-1:0] {Domain sd} dest,
+  output reg [1:0]         {Domain sd} route,
+  input                    {L} sd
 );
 
   // calculate forward and backward hops
 
-  wire [c_dest_nbits-1:0] forw_hops;
-  wire [c_dest_nbits-1:0] backw_hops;
+  wire [c_dest_nbits-1:0] {Domain sd} forw_hops;
+  wire [c_dest_nbits-1:0] {Domain sd} backw_hops;
 
   assign forw_hops =  ( dest - p_router_id );
   assign backw_hops = ( p_router_id - dest );
