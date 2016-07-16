@@ -34,50 +34,51 @@ module plab4_net_RouterBase
   input                        clk,
   input                        reset,
 
-  input                        {Domain in0_sd} in0_val,
+  input                        {Domain cur_sd} in0_val,
   output                       {Domain cur_sd} in0_rdy,
-  input  [c_net_msg_nbits-1:0] {L} in0_msg,
-  // current security domain of west input
-  input                        {L} in0_sd,
+  input  [c_net_msg_nbits-1:0] {Domain cur_sd} in0_msg,
+  // // current security domain of west input
+  // input                        {L} in0_sd,
 
   input                        {Domain in1_sd} in1_val,
   output                       {Domain in1_sd} in1_rdy,
-  input  [c_net_msg_nbits-1:0] {L} in1_msg,
+  input  [c_net_msg_nbits-1:0] {Domain in1_sd} in1_msg,
   // current security domain of terminal input
   input                        {L} in1_sd,
 
-  input                        {Domain in2_sd} in2_val,
+  input                        {Domain cur_sd} in2_val,
   output                       {Domain cur_sd} in2_rdy,
-  input  [c_net_msg_nbits-1:0] {L} in2_msg,
-  // current security domain of east input
-  input                        {L} in2_sd,
+  input  [c_net_msg_nbits-1:0] {Domain cur_sd} in2_msg,
+  // // current security domain of east input
+  // input                        {L} in2_sd,
 
   output                       {Domain cur_sd} out0_val,
   input                        {Domain cur_sd} out0_rdy,
-  output [c_net_msg_nbits-1:0] {L} out0_msg,
-  // current security domain of west output
-  output                       {L} out0_sd,
+  output [c_net_msg_nbits-1:0] {Domain cur_sd} out0_msg,
+  // // current security domain of west output
+  // output                       {L} out0_sd,
 
   output                       {Domain cur_sd} out1_val,
   input                        {Domain cur_sd} out1_rdy,
-  output [c_net_msg_nbits-1:0] {L} out1_msg,
-  // current security domain of termianl output
-  output                       {L} out1_sd,
+  output [c_net_msg_nbits-1:0] {Domain cur_sd} out1_msg,
+  // // current security domain of termianl output
+  // output                       {L} out1_sd,
 
   output                       {Domain cur_sd} out2_val,
   input                        {Domain cur_sd} out2_rdy,
-  output [c_net_msg_nbits-1:0] {L} out2_msg,
-  // current security domain of east output
-  output                       {L} out2_sd
+  output [c_net_msg_nbits-1:0] {Domain cur_sd} out2_msg,
+  // // current security domain of east output
+  // output                       {L} out2_sd,
+  input                        {L} cur_sd
 
 );
 
-  // current security domain of the router
-  reg                          {L} cur_sd;
-  
-  always @ (posedge clk) begin
-      cur_sd <= ~cur_sd;
-  end
+  // // current security domain of the router
+  // reg                          {L} cur_sd;
+  //
+  // always @ (posedge clk) begin
+  //     cur_sd <= ~cur_sd;
+  // end
   //----------------------------------------------------------------------
   // Wires
   //----------------------------------------------------------------------
@@ -85,36 +86,36 @@ module plab4_net_RouterBase
   // enqueue signals
   wire                       {D0} in0_val_d0;
   wire                       {D0} in0_rdy_d0;
-  wire [c_net_msg_nbits-1:0] {L}  in0_msg_d0;
+  wire [c_net_msg_nbits-1:0] {D0} in0_msg_d0;
   wire                       {D1} in0_val_d1;
   wire                       {D1} in0_rdy_d1;
-  wire [c_net_msg_nbits-1:0] {L}  in0_msg_d1;
+  wire [c_net_msg_nbits-1:0] {D1} in0_msg_d1;
 
   wire                       {D0} in2_val_d0;
   wire                       {D0} in2_rdy_d0;
-  wire [c_net_msg_nbits-1:0] {L}  in2_msg_d0;
+  wire [c_net_msg_nbits-1:0] {D0} in2_msg_d0;
   wire                       {D1} in2_val_d1;
   wire                       {D1} in2_rdy_d1;
-  wire [c_net_msg_nbits-1:0] {L}  in2_msg_d1;
+  wire [c_net_msg_nbits-1:0] {D1} in2_msg_d1;
   
   // dequeue signals
   wire                       {D0} in0_deq_val_d0;
   wire                       {D0} in0_deq_rdy_d0;
-  wire [c_net_msg_nbits-1:0] {L}  in0_deq_msg_d0;
+  wire [c_net_msg_nbits-1:0] {D0} in0_deq_msg_d0;
   wire                       {D1} in0_deq_val_d1;
   wire                       {D1} in0_deq_rdy_d1;
-  wire [c_net_msg_nbits-1:0] {L}  in0_deq_msg_d1;
+  wire [c_net_msg_nbits-1:0] {D1} in0_deq_msg_d1;
 
   wire                       {Domain in1_sd} in1_deq_val_pre;
   reg                        {Domain in1_sd} in1_deq_rdy_pre;
-  wire [c_net_msg_nbits-1:0] {L} in1_deq_msg;
+  wire [c_net_msg_nbits-1:0] {Domain in1_sd} in1_deq_msg_pre;
 
   wire                       {D0} in2_deq_val_d0;
   wire                       {D0} in2_deq_rdy_d0;
-  wire [c_net_msg_nbits-1:0] {L}  in2_deq_msg_d0;
+  wire [c_net_msg_nbits-1:0] {D0} in2_deq_msg_d0;
   wire                       {D1} in2_deq_val_d1;
   wire                       {D1} in2_deq_rdy_d1;
-  wire [c_net_msg_nbits-1:0] {L}  in2_deq_msg_d1;
+  wire [c_net_msg_nbits-1:0] {D1} in2_deq_msg_d1;
 
   //+++ gen-harness : begin insert +++++++++++++++++++++++++++++++++++++++
 // 
@@ -148,11 +149,11 @@ module plab4_net_RouterBase
   wire [2:0]                 {D0} num_free_east_d0;
   wire [2:0]                 {D1} num_free_east_d1;
   
-  assign in0_msg_d0 = in0_msg;
-  assign in0_msg_d1 = in0_msg;
+  assign in0_msg_d0 = (cur_sd == 1) ? 32'h0 : in0_msg;
+  assign in0_msg_d1 = (cur_sd == 1) ? in0_msg : 32'h0;
   // assign in0_val_d0 = in0_val ? (in0_sd ? 0 : 1) : 0;
-  assign in0_val_d0 = (in0_sd == 1) ? 0 : in0_val;
-  assign in0_val_d1 = (in0_sd == 1) ? in0_val : 0;
+  assign in0_val_d0 = (cur_sd == 1) ? 0 : in0_val;
+  assign in0_val_d1 = (cur_sd == 1) ? in0_val : 0;
   // FIX
   assign in0_deq_rdy_d0 = (cur_sd == 1) ? 0 : in0_deq_rdy;
   assign in0_deq_rdy_d1 = (cur_sd == 1) ? in0_deq_rdy : 0;
@@ -220,14 +221,14 @@ module plab4_net_RouterBase
 
     .deq_val    (in1_deq_val_pre),
     .deq_rdy    (in1_deq_rdy_pre),
-    .deq_msg    (in1_deq_msg),
+    .deq_msg    (in1_deq_msg_pre),
     .cur_sd     (in1_sd)
   );
 
-  assign in2_msg_d0 = in2_msg;
-  assign in2_msg_d1 = in2_msg;
-  assign in2_val_d0 = (in2_sd == 1) ? 0 : in2_val;
-  assign in2_val_d1 = (in2_sd == 1) ? in2_val : 0;
+  assign in2_msg_d0 = (cur_sd == 1) ? 32'h0 : in2_msg;
+  assign in2_msg_d1 = (cur_sd == 1) ? in2_msg : 32'h0;
+  assign in2_val_d0 = (cur_sd == 1) ? 0 : in2_val;
+  assign in2_val_d1 = (cur_sd == 1) ? in2_val : 0;
   // FIX
   assign in2_deq_rdy_d0 = (cur_sd == 1) ? 0 : in2_deq_rdy;
   assign in2_deq_rdy_d1 = (cur_sd == 1) ? in2_deq_rdy : 0;
@@ -284,19 +285,20 @@ module plab4_net_RouterBase
   
   wire                       {Domain cur_sd} in0_deq_val;
   wire                       {Domain cur_sd} in0_deq_rdy;
-  wire [c_net_msg_nbits-1:0] {L} in0_deq_msg;
+  wire [c_net_msg_nbits-1:0] {Domain cur_sd} in0_deq_msg;
   wire [2:0]                 {Domain cur_sd} num_free_west;
   
   reg                        {Domain cur_sd} in1_deq_val;
   wire                       {Domain cur_sd} in1_deq_rdy;
+  reg  [c_net_msg_nbits-1:0] {Domain cur_sd} in1_deq_msg;
   
   wire                       {Domain cur_sd} in2_deq_val;
   wire                       {Domain cur_sd} in2_deq_rdy;
-  wire [c_net_msg_nbits-1:0] {L} in2_deq_msg;
+  wire [c_net_msg_nbits-1:0] {Domain cur_sd} in2_deq_msg;
   wire [2:0]                 {Domain cur_sd} num_free_east;
   
   // West muxes
-  vc_Mux2_low
+  vc_Mux2_sec
   #(
   	.p_nbits		(c_net_msg_nbits)
   )
@@ -351,15 +353,17 @@ module plab4_net_RouterBase
       if (cur_sd == in1_sd) begin
           in1_deq_val = in1_deq_val_pre;
           in1_deq_rdy_pre = in1_deq_rdy;
+          in1_deq_msg = in1_deq_msg_pre;
       end
       else begin
           in1_deq_val = 0;
           in1_deq_rdy_pre = 0;
+          in1_deq_msg = 32'h0;
       end
   end
           
   // East muxes
-  vc_Mux2_low
+  vc_Mux2_sec
   #(
   	.p_nbits		(c_net_msg_nbits)
   )
@@ -568,7 +572,7 @@ module plab4_net_RouterBase
     .cur_sd   (cur_sd)
   );
   
-  assign out0_sd = cur_sd;
+  // assign out0_sd = cur_sd;
 
   plab4_net_RouterOutputCtrl out1_ctrl
   (
@@ -584,7 +588,7 @@ module plab4_net_RouterBase
     .cur_sd   (cur_sd)
   );
   
-  assign out1_sd = cur_sd;
+  // assign out1_sd = cur_sd;
 
   plab4_net_RouterOutputCtrl out2_ctrl
   (
@@ -600,7 +604,7 @@ module plab4_net_RouterBase
     .cur_sd   (cur_sd)
   );
   
-  assign out2_sd = cur_sd;
+  // assign out2_sd = cur_sd;
 
   //+++ gen-harness : end cut ++++++++++++++++++++++++++++++++++++++++++++
 
