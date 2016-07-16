@@ -14,9 +14,10 @@
 
 module plab2_proc_BrTarget
 (
-  input  [31:0] pc_plus4,
-  input  [31:0] imm_sext,
-  output [31:0] br_target
+  input  [31:0] {Domain sd} pc_plus4,
+  input  [31:0] {Domain sd} imm_sext,
+  output [31:0] {Domain sd} br_target,
+  input         {L} sd
 );
 
   assign br_target = pc_plus4 + ( imm_sext << 2 );
@@ -32,9 +33,10 @@ endmodule
 
 module plab2_proc_JTarget
 (
-  input  [31:0] pc_plus4,
-  input  [25:0] imm_target,
-  output [31:0] j_target
+  input  [31:0] {Domain sd} pc_plus4,
+  input  [25:0] {Domain sd} imm_target,
+  output [31:0] {Domain sd} j_target,
+  input         {L} sd
 );
 
   assign j_target = { pc_plus4[31:26], ( imm_target << 2 ) };
@@ -49,25 +51,26 @@ endmodule
 
 module plab2_proc_Regfile
 (
-  input         clk,
-  input         reset,
+  input         {L} clk,
+  input         {L} reset,
 
-  input   [4:0] read_addr0,
-  output [31:0] read_data0,
+  input   [4:0] {Domain sd} read_addr0,
+  output [31:0] {Domain sd} read_data0,
 
-  input   [4:0] read_addr1,
-  output [31:0] read_data1,
+  input   [4:0] {Domain sd} read_addr1,
+  output [31:0] {Domain sd} read_data1,
 
-  input         write_en,
-  input   [4:0] write_addr,
-  input  [31:0] write_data
+  input         {Domain sd} write_en,
+  input   [4:0] {Domain sd} write_addr,
+  input  [31:0] {Domain sd} write_data,
+  input         {L} sd
 );
 
   // these wires are to be hooked up to the actual register file read
   // ports
 
-  wire [31:0] rf_read_data0;
-  wire [31:0] rf_read_data1;
+  wire [31:0] {Domain sd} rf_read_data0;
+  wire [31:0] {Domain sd} rf_read_data1;
 
   vc_Regfile_2r1w
   #(
@@ -84,7 +87,8 @@ module plab2_proc_Regfile
     .read_data1  (rf_read_data1),
     .write_en    (write_en),
     .write_addr  (write_addr),
-    .write_data  (write_data)
+    .write_data  (write_data),
+    .sd          (sd)
   );
 
   // we pick 0 value when either read address is 0
@@ -99,17 +103,19 @@ endmodule
 
 module plab2_proc_AluAddSub
 (
-  input      [ 1:0] addsub_fn, // 00 = add, 01 = sub, 10 = slt, 11 = sltu
-  input      [31:0] alu_a,     // A operand
-  input      [31:0] alu_b,     // B operand
-  output reg [31:0] result     // result
+  input      [ 1:0] {Domain sd} addsub_fn, // 00 = add, 01 = sub, 10 = slt, 11 = sltu
+  input      [31:0] {Domain sd} alu_a,     // A operand
+  input      [31:0] {Domain sd} alu_b,     // B operand
+  output reg [31:0] {Domain sd} result,     // result
+  input         {L} sd
 );
 
   // We use one adder to perform both additions and subtractions
-  wire [31:0] xB  = ( addsub_fn != 2'b00 ) ? ( ~alu_b + 1 ) : alu_b;
-  wire [31:0] sum = alu_a + xB;
+  wire [31:0] {Domain sd} xB;
+  assign xB = ( addsub_fn != 2'b00 ) ? ( ~alu_b + 1 ) : alu_b;
+  wire [31:0] {Domain sd} sum = alu_a + xB;
 
-  wire diffSigns = alu_a[31] ^ alu_b[31];
+  wire {Domain sd} diffSigns = alu_a[31] ^ alu_b[31];
 
   always @(*)
   begin
@@ -183,15 +189,16 @@ endmodule
 
 module plab2_proc_AluShifter
 (
-  input  [ 1:0] shift_fn,  // 00 = lsl, 01 = lsr, 11 = asr
-  input  [31:0] alu_a,     // Shift ammount
-  input  [31:0] alu_b,     // Operand to shift
-  output [31:0] result     // result
+  input  [ 1:0] {Domain sd} shift_fn,  // 00 = lsl, 01 = lsr, 11 = asr
+  input  [31:0] {Domain sd} alu_a,     // Shift ammount
+  input  [31:0] {Domain sd} alu_b,     // Operand to shift
+  output [31:0] {Domain sd} result,     // result
+  input         {L} sd
 );
 
   // We need this to make sure that we get a signed right shift
-  wire signed [31:0] signed_alu_b = alu_b;
-  wire signed [31:0] signed_result = signed_alu_b >>> alu_a[4:0];
+  wire signed [31:0] {Domain sd} signed_alu_b = alu_b;
+  wire signed [31:0] {Domain sd} signed_result = signed_alu_b >>> alu_a[4:0];
 
   assign result
     = ( shift_fn == 2'b00 ) ? ( alu_b << alu_a[4:0] ) :
@@ -207,10 +214,11 @@ endmodule
 
 module plab2_proc_AluLogical
 (
-  input  [1:0]  logical_fn, // 00 = and, 01 = or, 10 = xor, 11 = nor
-  input  [31:0] alu_a,
-  input  [31:0] alu_b,
-  output [31:0] result
+  input  [1:0]  {Domain sd} logical_fn, // 00 = and, 01 = or, 10 = xor, 11 = nor
+  input  [31:0] {Domain sd} alu_a,
+  input  [31:0] {Domain sd} alu_b,
+  output [31:0] {Domain sd} result,
+  input         {L} sd
 );
 
   assign result
@@ -228,21 +236,22 @@ endmodule
 
 module plab2_proc_Alu
 (
-  input  [31:0] in0,
-  input  [31:0] in1,
-  input  [ 3:0] fn,
-  output [31:0] out
+  input  [31:0] {Domain sd} in0,
+  input  [31:0] {Domain sd} in1,
+  input  [ 3:0] {Domain sd} fn,
+  output [31:0] {Domain sd} out,
+  input         {L} sd
 );
 
   // -- Decoder ----------------------------------------------------------
 
-  reg [1:0] out_mux_sel;
-  reg [1:0] fn_addsub;
-  reg [1:0] fn_shifter;
-  reg [1:0] fn_logical;
-  reg       fn_cp;
+  reg [1:0] {Domain sd} out_mux_sel;
+  reg [1:0] {Domain sd} fn_addsub;
+  reg [1:0] {Domain sd} fn_shifter;
+  reg [1:0] {Domain sd} fn_logical;
+  reg       {Domain sd} fn_cp;
 
-  reg [8:0] cs;
+  reg [8:0] {Domain sd} cs;
 
   always @(*)
   begin
@@ -270,44 +279,48 @@ module plab2_proc_Alu
 
   // -- Functional units -------------------------------------------------
 
-  wire [31:0] addsub_out;
+  wire [31:0] {Domain sd} addsub_out;
 
   plab2_proc_AluAddSub addsub
   (
     .addsub_fn  (fn_addsub),
     .alu_a      (in0),
     .alu_b      (in1),
-    .result     (addsub_out)
+    .result     (addsub_out),
+    .sd         (sd)
   );
 
-  wire [31:0] shifter_out;
+  wire [31:0] {Domain sd} shifter_out;
 
   plab2_proc_AluShifter shifter
   (
     .shift_fn   (fn_shifter),
     .alu_a      (in0),
     .alu_b      (in1),
-    .result     (shifter_out)
+    .result     (shifter_out),
+    .sd         (sd)
   );
 
-  wire [31:0] logical_out;
+  wire [31:0] {Domain sd} logical_out;
 
   plab2_proc_AluLogical logical
   (
     .logical_fn (fn_logical),
     .alu_a      (in0),
     .alu_b      (in1),
-    .result     (logical_out)
+    .result     (logical_out),
+    .sd         (sd)
   );
 
-  wire [31:0] cp_out;
+  wire [31:0] {Domain sd} cp_out;
 
   vc_Mux2 #(32) cp_mux
   (
     .in0 (in0),
     .in1 (in1),
     .sel (fn_cp),
-    .out (cp_out)
+    .out (cp_out),
+    .sd  (sd)
   );
 
   // -- Final output mux -------------------------------------------------

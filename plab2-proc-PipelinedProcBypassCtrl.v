@@ -12,70 +12,71 @@
 
 module plab2_proc_PipelinedProcBypassCtrl
 (
-  input clk,
-  input reset,
+  input {L} clk,
+  input {L} reset,
 
   // Instruction Memory Port
 
-  output        imemreq_val,
-  input         imemreq_rdy,
+  output        {Domain sd} imemreq_val,
+  input         {Domain sd} imemreq_rdy,
 
-  input         imemresp_val,
-  output        imemresp_rdy,
+  input         {Domain sd} imemresp_val,
+  output        {Domain sd} imemresp_rdy,
 
-  output        imemresp_drop,
+  output        {Domain sd} imemresp_drop,
 
   // Data Memory Port
 
-  output                                           dmemreq_val,
-  input                                            dmemreq_rdy,
-  output [`VC_MEM_REQ_MSG_TYPE_NBITS(8,32,32)-1:0] dmemreq_msg_type,
+  output                                           {Domain sd} dmemreq_val,
+  input                                            {Domain sd} dmemreq_rdy,
+  output [`VC_MEM_REQ_MSG_TYPE_NBITS(8,32,32)-1:0] {Domain sd} dmemreq_msg_type,
 
-  input                                            dmemresp_val,
-  output                                           dmemresp_rdy,
+  input                                            {Domain sd} dmemresp_val,
+  output                                           {Domain sd} dmemresp_rdy,
 
   // mngr communication port
 
-  input         from_mngr_val,
-  output        from_mngr_rdy,
+  input         {Domain sd} from_mngr_val,
+  output        {Domain sd} from_mngr_rdy,
 
-  output        to_mngr_val,
-  input         to_mngr_rdy,
+  output        {Domain sd} to_mngr_val,
+  input         {Domain sd} to_mngr_rdy,
 
   // mul unit ports (control and status)
 
-  output        mul_req_val_D,
-  input         mul_req_rdy_D,
+  output        {Domain sd} mul_req_val_D,
+  input         {Domain sd} mul_req_rdy_D,
 
-  input         mul_resp_val_X,
-  output        mul_resp_rdy_X,
+  input         {Domain sd} mul_resp_val_X,
+  output        {Domain sd} mul_resp_rdy_X,
 
   // control signals (ctrl->dpath)
 
-  output [1:0]  pc_sel_F,
-  output        reg_en_F,
-  output        reg_en_D,
-  output        reg_en_X,
-  output        reg_en_M,
-  output        reg_en_W,
-  output [1:0]  op0_sel_D,
-  output [2:0]  op1_sel_D,
-  output [1:0]  op0_byp_sel_D,
-  output [1:0]  op1_byp_sel_D,
-  output [1:0]  mfc_sel_D,
-  output [3:0]  alu_fn_X,
-  output        ex_result_sel_X,
-  output        wb_result_sel_M,
-  output [4:0]  rf_waddr_W,
-  output        rf_wen_W,
-  output        stats_en_wen_W,
+  output [1:0]  {Domain sd} pc_sel_F,
+  output        {Domain sd} reg_en_F,
+  output        {Domain sd} reg_en_D,
+  output        {Domain sd} reg_en_X,
+  output        {Domain sd} reg_en_M,
+  output        {Domain sd} reg_en_W,
+  output [1:0]  {Domain sd} op0_sel_D,
+  output [2:0]  {Domain sd} op1_sel_D,
+  output [1:0]  {Domain sd} op0_byp_sel_D,
+  output [1:0]  {Domain sd} op1_byp_sel_D,
+  output [1:0]  {Domain sd} mfc_sel_D,
+  output [3:0]  {Domain sd} alu_fn_X,
+  output        {Domain sd} ex_result_sel_X,
+  output        {Domain sd} wb_result_sel_M,
+  output [4:0]  {Domain sd} rf_waddr_W,
+  output        {Domain sd} rf_wen_W,
+  output        {Domain sd} stats_en_wen_W,
 
   // status signals (dpath->ctrl)
 
-  input [31:0]  inst_D,
-  input         br_cond_zero_X,
-  input         br_cond_neg_X,
-  input         br_cond_eq_X
+  input [31:0]  {Domain sd} inst_D,
+  input         {Domain sd} br_cond_zero_X,
+  input         {Domain sd} br_cond_neg_X,
+  input         {Domain sd} br_cond_eq_X,
+  input         {L} sd
 
 );
 
@@ -83,17 +84,17 @@ module plab2_proc_PipelinedProcBypassCtrl
   // F stage
   //----------------------------------------------------------------------
 
-  wire reg_en_F;
-  wire val_F;
-  wire stall_F;
-  wire squash_F;
+  wire {Domain sd} reg_en_F;
+  wire {Domain sd} val_F;
+  wire {Domain sd} stall_F;
+  wire {Domain sd} squash_F;
 
-  wire val_FD;
-  wire stall_FD;
-  wire squash_FD;
+  wire {Domain sd} val_FD;
+  wire {Domain sd} stall_FD;
+  wire {Domain sd} squash_FD;
 
-  wire stall_PF;
-  wire squash_PF;
+  wire {Domain sd} stall_PF;
+  wire {Domain sd} squash_PF;
 
   vc_PipeCtrl pipe_ctrl_F
   (
@@ -111,7 +112,8 @@ module plab2_proc_PipelinedProcBypassCtrl
 
     .next_val    ( val_FD    ),
     .next_stall  ( stall_FD  ),
-    .next_squash ( squash_FD )
+    .next_squash ( squash_FD ),
+    .sd          ( sd        )
   );
 
   // PC Mux select
@@ -122,14 +124,14 @@ module plab2_proc_PipelinedProcBypassCtrl
   localparam pm_j     = 2'd2; // Use jump address (imm)
   localparam pm_r     = 2'd3; // Use jump address (reg)
 
-  reg  [1:0] j_pc_sel_D;
-  wire [1:0] br_pc_sel_X;
+  reg  [1:0] {Domain sd} j_pc_sel_D;
+  wire [1:0] {Domain sd} br_pc_sel_X;
 
   assign pc_sel_F = ( br_pc_sel_X ? br_pc_sel_X :
                     (  j_pc_sel_D ? j_pc_sel_D  :
                                     pm_p          ) );
 
-  wire stall_imem_F;
+  wire {Domain sd} stall_imem_F;
 
   assign imemreq_val = !stall_PF;
 
@@ -148,14 +150,14 @@ module plab2_proc_PipelinedProcBypassCtrl
   // D stage
   //----------------------------------------------------------------------
 
-  wire reg_en_D;
-  wire val_D;
-  wire stall_D;
-  wire squash_D;
+  wire {Domain sd} reg_en_D;
+  wire {Domain sd} val_D;
+  wire {Domain sd} stall_D;
+  wire {Domain sd} squash_D;
 
-  wire val_DX;
-  wire stall_DX;
-  wire squash_DX;
+  wire {Domain sd} val_DX;
+  wire {Domain sd} stall_DX;
+  wire {Domain sd} squash_DX;
 
   vc_PipeCtrl pipe_ctrl_D
   (
@@ -173,35 +175,46 @@ module plab2_proc_PipelinedProcBypassCtrl
 
     .next_val    ( val_DX    ),
     .next_stall  ( stall_DX  ),
-    .next_squash ( squash_DX )
+    .next_squash ( squash_DX ),
+    .sd          ( sd        )
   );
 
   // decode logic
 
   // Parse instruction fields
 
-  wire   [4:0] inst_rs_D;
-  wire   [4:0] inst_rt_D;
-  wire   [4:0] inst_rd_D;
-
+  wire   [4:0] {Domain sd} inst_rs_D;
+  wire   [4:0] {Domain sd} inst_rt_D;
+  wire   [4:0] {Domain sd} inst_rd_D;
+  wire   [`PISA_INST_OPCODE_NBITS-1:0] {Domain sd} opcode_D;
+  wire   [`PISA_INST_SHAMT_NBITS-1:0]  {Domain sd} shamt_D;
+  wire   [`PISA_INST_FUNC_NBITS-1:0]   {Domain sd} func_D;
+  wire   [`PISA_INST_IMM_NBITS-1:0]    {Domain sd} imm_D;
+  wire   [`PISA_INST_TARGET_NBITS-1:0] {Domain sd} target_D;
+  
   pisa_InstUnpack inst_unpack
   (
     .inst     (inst_D),
-    .opcode   (),
+    .opcode   (opcode_D),
     .rs       (inst_rs_D),
     .rt       (inst_rt_D),
     .rd       (inst_rd_D),
-    .shamt    (),
-    .func     (),
-    .imm      (),
-    .target   ()
+    .shamt    (shamt_D),
+    .func     (func_D),
+    .imm      (imm_D),
+    .target   (target_D),
+    .sd       (sd)
   );
 
   // Shorten register specifier name for table
 
-  wire [4:0] rs = inst_rs_D;
-  wire [4:0] rt = inst_rt_D;
-  wire [4:0] rd = inst_rd_D;
+  wire [4:0] {Domain sd} rs;
+  wire [4:0] {Domain sd} rt;
+  wire [4:0] {Domain sd} rd;
+
+  assign rs = inst_rs_D;
+  assign rt = inst_rt_D;
+  assign rd = inst_rd_D;
 
   // Generic Parameters
 
@@ -300,22 +313,22 @@ module plab2_proc_PipelinedProcBypassCtrl
 
   // Instruction Decode
 
-  reg       inst_val_D;
-  reg [1:0] j_type_D;
-  reg [2:0] br_type_D;
-  reg       rs_en_D;
-  reg [1:0] op0_sel_D;
-  reg       rt_en_D;
-  reg [2:0] op1_sel_D;
-  reg [3:0] alu_fn_D;
-  reg       mul_req_type_D;
-  reg       ex_result_sel_D;
-  reg [2:0] dmemreq_type_D;
-  reg       wb_result_sel_D;
-  reg       rf_wen_D;
-  reg [4:0] rf_waddr_D;
-  reg       mtc_D;
-  reg       mfc_D;
+  reg       {Domain sd} inst_val_D;
+  reg [1:0] {Domain sd} j_type_D;
+  reg [2:0] {Domain sd} br_type_D;
+  reg       {Domain sd} rs_en_D;
+  reg [1:0] {Domain sd} op0_sel_D;
+  reg       {Domain sd} rt_en_D;
+  reg [2:0] {Domain sd} op1_sel_D;
+  reg [3:0] {Domain sd} alu_fn_D;
+  reg       {Domain sd} mul_req_type_D;
+  reg       {Domain sd} ex_result_sel_D;
+  reg [2:0] {Domain sd} dmemreq_type_D;
+  reg       {Domain sd} wb_result_sel_D;
+  reg       {Domain sd} rf_wen_D;
+  reg [4:0] {Domain sd} rf_waddr_D;
+  reg       {Domain sd} mtc_D;
+  reg       {Domain sd} mfc_D;
 
   task cs
   (
@@ -417,15 +430,15 @@ module plab2_proc_PipelinedProcBypassCtrl
     endcase
   end
 
-  wire stall_from_mngr_D;
-  wire stall_mul_req_D;
-  wire stall_hazard_D;
+  wire {Domain sd} stall_from_mngr_D;
+  wire {Domain sd} stall_mul_req_D;
+  wire {Domain sd} stall_hazard_D;
 
   // jump logic
 
-  wire      j_taken_D;
-  wire      squash_j_D;
-  wire      stall_j_D;
+  wire      {Domain sd} j_taken_D;
+  wire      {Domain sd} squash_j_D;
+  wire      {Domain sd} stall_j_D;
 
   always @(*) begin
     if ( val_D ) begin
@@ -446,10 +459,10 @@ module plab2_proc_PipelinedProcBypassCtrl
 
   // mtc and mfc instructions
 
-  reg to_mngr_val_D;
-  reg from_mngr_rdy_D;
-  reg stats_en_wen_D;
-  reg [1:0] mfc_sel_D;
+  reg {Domain sd} to_mngr_val_D;
+  reg {Domain sd} from_mngr_rdy_D;
+  reg {Domain sd} stats_en_wen_D;
+  reg [1:0] {Domain sd}mfc_sel_D;
 
   always @(*) begin
     to_mngr_val_D    = 1'b0;
@@ -490,8 +503,8 @@ module plab2_proc_PipelinedProcBypassCtrl
 
   // Bypassing logic
 
-  reg [1:0] op0_byp_sel_D;
-  reg [1:0] op1_byp_sel_D;
+  reg [1:0] {Domain sd} op0_byp_sel_D;
+  reg [1:0] {Domain sd} op1_byp_sel_D;
 
   always @(*) begin
 
@@ -576,14 +589,14 @@ module plab2_proc_PipelinedProcBypassCtrl
   // X stage
   //----------------------------------------------------------------------
 
-  wire reg_en_X;
-  wire val_X;
-  wire stall_X;
-  wire squash_X;
+  wire {Domain sd} reg_en_X;
+  wire {Domain sd} val_X;
+  wire {Domain sd} stall_X;
+  wire {Domain sd} squash_X;
 
-  wire val_XM;
-  wire stall_XM;
-  wire squash_XM;
+  wire {Domain sd} val_XM;
+  wire {Domain sd} stall_XM;
+  wire {Domain sd} squash_XM;
 
   vc_PipeCtrl pipe_ctrl_X
   (
@@ -601,20 +614,21 @@ module plab2_proc_PipelinedProcBypassCtrl
 
     .next_val    ( val_XM    ),
     .next_stall  ( stall_XM  ),
-    .next_squash ( squash_XM )
+    .next_squash ( squash_XM ),
+    .sd          ( sd        )
   );
 
-  reg [31:0] inst_X;
-  reg [3:0]  alu_fn_X;
-  reg        mul_req_type_X;
-  reg        ex_result_sel_X;
-  reg [2:0]  dmemreq_type_X;
-  reg        wb_result_sel_X;
-  reg        rf_wen_X;
-  reg [4:0]  rf_waddr_X;
-  reg        to_mngr_val_X;
-  reg        stats_en_wen_X;
-  reg [2:0]  br_type_X;
+  reg [31:0] {Domain sd} inst_X;
+  reg [3:0]  {Domain sd} alu_fn_X;
+  reg        {Domain sd} mul_req_type_X;
+  reg        {Domain sd} ex_result_sel_X;
+  reg [2:0]  {Domain sd} dmemreq_type_X;
+  reg        {Domain sd} wb_result_sel_X;
+  reg        {Domain sd} rf_wen_X;
+  reg [4:0]  {Domain sd} rf_waddr_X;
+  reg        {Domain sd} to_mngr_val_X;
+  reg        {Domain sd} stats_en_wen_X;
+  reg [2:0]  {Domain sd} br_type_X;
 
   always @(posedge clk) begin
     if (reset) begin
@@ -637,9 +651,9 @@ module plab2_proc_PipelinedProcBypassCtrl
 
   // branch logic
 
-  reg        br_taken_X;
-  wire       squash_br_X;
-  wire       stall_br_X;
+  reg        {Domain sd} br_taken_X;
+  wire       {Domain sd} squash_br_X;
+  wire       {Domain sd} stall_br_X;
 
   always @(*) begin
     if ( val_X ) begin
@@ -664,12 +678,12 @@ module plab2_proc_PipelinedProcBypassCtrl
 
   assign squash_br_X = br_taken_X;
 
-  wire dmemreq_val_X;
-  wire stall_dmem_X;
+  wire {Domain sd} dmemreq_val_X;
+  wire {Domain sd} stall_dmem_X;
 
   // dmem logic
 
-  reg [`VC_MEM_REQ_MSG_TYPE_NBITS(8,32,32)-1:0] dmemreq_msg_type;
+  reg [`VC_MEM_REQ_MSG_TYPE_NBITS(8,32,32)-1:0] {Domain sd} dmemreq_msg_type;
 
   assign dmemreq_val_X = val_X && ( dmemreq_type_X != nr );
 
@@ -689,7 +703,7 @@ module plab2_proc_PipelinedProcBypassCtrl
 
   // mul logic
 
-  wire stall_mul_resp_X;
+  wire {Domain sd} stall_mul_resp_X;
 
   assign mul_resp_rdy_X =    ( val_X
                             && ( mul_req_type_X != mul_n )
@@ -708,14 +722,14 @@ module plab2_proc_PipelinedProcBypassCtrl
   // M stage
   //----------------------------------------------------------------------
 
-  wire reg_en_M;
-  wire val_M;
-  wire stall_M;
-  wire squash_M;
+  wire {Domain sd} reg_en_M;
+  wire {Domain sd} val_M;
+  wire {Domain sd} stall_M;
+  wire {Domain sd} squash_M;
 
-  wire val_MW;
-  wire stall_MW;
-  wire squash_MW;
+  wire {Domain sd} val_MW;
+  wire {Domain sd} stall_MW;
+  wire {Domain sd} squash_MW;
 
   vc_PipeCtrl pipe_ctrl_M
   (
@@ -733,16 +747,17 @@ module plab2_proc_PipelinedProcBypassCtrl
 
     .next_val    ( val_MW    ),
     .next_stall  ( stall_MW  ),
-    .next_squash ( squash_MW )
+    .next_squash ( squash_MW ),
+    .sd          ( sd        )
   );
 
-  reg [31:0] inst_M;
-  reg [2:0]  dmemreq_type_M;
-  reg        wb_result_sel_M;
-  reg        rf_wen_M;
-  reg [4:0]  rf_waddr_M;
-  reg        stats_en_wen_M;
-  reg        to_mngr_val_M;
+  reg [31:0] {Domain sd} inst_M;
+  reg [2:0]  {Domain sd} dmemreq_type_M;
+  reg        {Domain sd} wb_result_sel_M;
+  reg        {Domain sd} rf_wen_M;
+  reg [4:0]  {Domain sd} rf_waddr_M;
+  reg        {Domain sd} stats_en_wen_M;
+  reg        {Domain sd} to_mngr_val_M;
 
   always @(posedge clk) begin
     if (reset) begin
@@ -759,8 +774,8 @@ module plab2_proc_PipelinedProcBypassCtrl
     end
   end
 
-  wire dmemreq_val_M;
-  wire stall_dmem_M;
+  wire {Domain sd} dmemreq_val_M;
+  wire {Domain sd} stall_dmem_M;
 
   assign dmemresp_rdy = dmemreq_val_M && !stall_MW;
 
@@ -774,13 +789,13 @@ module plab2_proc_PipelinedProcBypassCtrl
   // W stage
   //----------------------------------------------------------------------
 
-  wire reg_en_W;
-  wire val_W;
-  wire stall_W;
-  wire squash_W;
+  wire {Domain sd} reg_en_W;
+  wire {Domain sd} val_W;
+  wire {Domain sd} stall_W;
+  wire {Domain sd} squash_W;
 
-  wire next_stall_W;
-  wire next_squash_W;
+  wire {Domain sd} next_stall_W;
+  wire {Domain sd} next_squash_W;
 
   assign next_stall_W = 1'b0;
   assign next_squash_W = 1'b0;
@@ -800,15 +815,16 @@ module plab2_proc_PipelinedProcBypassCtrl
     .curr_squash ( squash_W  ),
 
     .next_stall  ( next_stall_W  ),
-    .next_squash ( next_squash_W )
+    .next_squash ( next_squash_W ),
+    .sd          ( sd        )
   );
 
-  reg [31:0] inst_W;
-  reg        rf_wen_W;
-  reg [4:0]  rf_waddr_W;
-  reg        stats_en_wen_W;
-  reg        to_mngr_val_W;
-  wire       stall_to_mngr_W;
+  reg [31:0] {Domain sd} inst_W;
+  reg        {Domain sd} rf_wen_W;
+  reg [4:0]  {Domain sd} rf_waddr_W;
+  reg        {Domain sd} stats_en_wen_W;
+  reg        {Domain sd} to_mngr_val_W;
+  wire       {Domain sd} stall_to_mngr_W;
 
   always @(posedge clk) begin
     if (reset) begin
