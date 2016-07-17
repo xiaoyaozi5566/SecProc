@@ -15,13 +15,13 @@
 `define PREV(i_)  ( ( i_ + c_num_ports - 1 ) % c_num_ports )
 `define NEXT(i_)  i_
 
-module plab4_net_RingNetBase
+module plab4_net_RingNetBase_4
 #(
   parameter p_payload_nbits  = 32,
   parameter p_opaque_nbits   = 3,
-  parameter p_srcdest_nbits  = 3,
+  parameter p_srcdest_nbits  = 2,
   
-  parameter c_num_ports = 8,
+  parameter c_num_ports = 4,
 
   // Shorter names, not to be set from outside the module
   parameter p = p_payload_nbits,
@@ -67,46 +67,10 @@ module plab4_net_RingNetBase
   output         {Domain in_sd_3} in_rdy_3,
   input  [m-1:0] {Domain in_sd_3} in_msg_3,
   input          {L} in_sd_3,
-
+  
   output         {Domain cur_sd} out_val_3,
   input          {Domain cur_sd} out_rdy_3,
   output [m-1:0] {Domain cur_sd} out_msg_3,
-  
-  input          {Domain in_sd_4} in_val_4,
-  output         {Domain in_sd_4} in_rdy_4,
-  input  [m-1:0] {Domain in_sd_4} in_msg_4,
-  input          {L} in_sd_4,
-
-  output         {Domain cur_sd} out_val_4,
-  input          {Domain cur_sd} out_rdy_4,
-  output [m-1:0] {Domain cur_sd} out_msg_4,
-  
-  input          {Domain in_sd_5} in_val_5,
-  output         {Domain in_sd_5} in_rdy_5,
-  input  [m-1:0] {Domain in_sd_5} in_msg_5,
-  input          {L} in_sd_5,
-
-  output         {Domain cur_sd} out_val_5,
-  input          {Domain cur_sd} out_rdy_5,
-  output [m-1:0] {Domain cur_sd} out_msg_5,
-  
-  input          {Domain in_sd_6} in_val_6,
-  output         {Domain in_sd_6} in_rdy_6,
-  input  [m-1:0] {Domain in_sd_6} in_msg_6,
-  input          {L} in_sd_6,
-
-  output         {Domain cur_sd} out_val_6,
-  input          {Domain cur_sd} out_rdy_6,
-  output [m-1:0] {Domain cur_sd} out_msg_6,
-  
-  input          {Domain in_sd_7} in_val_7,
-  output         {Domain in_sd_7} in_rdy_7,
-  input  [m-1:0] {Domain in_sd_7} in_msg_7,
-  input          {L} in_sd_7,
-
-  output         {Domain cur_sd} out_val_7,
-  input          {Domain cur_sd} out_rdy_7,
-  output [m-1:0] {Domain cur_sd} out_msg_7,
   
   input          {L} cur_sd
 );
@@ -308,170 +272,6 @@ module plab4_net_RingNetBase
     .out2_val (forw_out_val[`VC_PORT_PICK_FIELD(1,`NEXT(3))]),
     .out2_rdy (forw_out_rdy[`VC_PORT_PICK_FIELD(1,`NEXT(3))]),
     .out2_msg (forw_out_msg[`VC_PORT_PICK_FIELD(m,`NEXT(3))]),
-    .cur_sd   (cur_sd)
-  );
-
-  plab4_net_RouterBase
-  #(
-    .p_payload_nbits  (p_payload_nbits),
-    .p_opaque_nbits   (p_opaque_nbits),
-    .p_srcdest_nbits  (p_srcdest_nbits),
-
-    .p_router_id      (4),
-    .p_num_routers    (c_num_ports)
-  )
-  router_4
-  (
-    .clk      (clk),
-    .reset    (reset),
-
-    .in0_val  (forw_in_val[`VC_PORT_PICK_FIELD(1,`PREV(4))]),
-    .in0_rdy  (forw_in_rdy[`VC_PORT_PICK_FIELD(1,`PREV(4))]),
-    .in0_msg  (forw_in_msg[`VC_PORT_PICK_FIELD(m,`PREV(4))]),
-
-    .in1_val  (in_val_4),
-    .in1_rdy  (in_rdy_4),
-    .in1_msg  (in_msg_4),
-    .in1_sd   (in_sd_4),
-
-    .in2_val  (backw_in_val[`VC_PORT_PICK_FIELD(1,`NEXT(4))]),
-    .in2_rdy  (backw_in_rdy[`VC_PORT_PICK_FIELD(1,`NEXT(4))]),
-    .in2_msg  (backw_in_msg[`VC_PORT_PICK_FIELD(m,`NEXT(4))]),
-
-    .out0_val (backw_out_val[`VC_PORT_PICK_FIELD(1,`PREV(4))]),
-    .out0_rdy (backw_out_rdy[`VC_PORT_PICK_FIELD(1,`PREV(4))]),
-    .out0_msg (backw_out_msg[`VC_PORT_PICK_FIELD(m,`PREV(4))]),
-
-    .out1_val (out_val_4),
-    .out1_rdy (out_rdy_4),
-    .out1_msg (out_msg_4),
-
-    .out2_val (forw_out_val[`VC_PORT_PICK_FIELD(1,`NEXT(4))]),
-    .out2_rdy (forw_out_rdy[`VC_PORT_PICK_FIELD(1,`NEXT(4))]),
-    .out2_msg (forw_out_msg[`VC_PORT_PICK_FIELD(m,`NEXT(4))]),
-    .cur_sd   (cur_sd)
-  );
-
-  plab4_net_RouterBase
-  #(
-    .p_payload_nbits  (p_payload_nbits),
-    .p_opaque_nbits   (p_opaque_nbits),
-    .p_srcdest_nbits  (p_srcdest_nbits),
-
-    .p_router_id      (5),
-    .p_num_routers    (c_num_ports)
-  )
-  router_5
-  (
-    .clk      (clk),
-    .reset    (reset),
-
-    .in0_val  (forw_in_val[`VC_PORT_PICK_FIELD(1,`PREV(5))]),
-    .in0_rdy  (forw_in_rdy[`VC_PORT_PICK_FIELD(1,`PREV(5))]),
-    .in0_msg  (forw_in_msg[`VC_PORT_PICK_FIELD(m,`PREV(5))]),
-
-    .in1_val  (in_val_5),
-    .in1_rdy  (in_rdy_5),
-    .in1_msg  (in_msg_5),
-    .in1_sd   (in_sd_5),
-
-    .in2_val  (backw_in_val[`VC_PORT_PICK_FIELD(1,`NEXT(5))]),
-    .in2_rdy  (backw_in_rdy[`VC_PORT_PICK_FIELD(1,`NEXT(5))]),
-    .in2_msg  (backw_in_msg[`VC_PORT_PICK_FIELD(m,`NEXT(5))]),
-
-    .out0_val (backw_out_val[`VC_PORT_PICK_FIELD(1,`PREV(5))]),
-    .out0_rdy (backw_out_rdy[`VC_PORT_PICK_FIELD(1,`PREV(5))]),
-    .out0_msg (backw_out_msg[`VC_PORT_PICK_FIELD(m,`PREV(5))]),
-
-    .out1_val (out_val_5),
-    .out1_rdy (out_rdy_5),
-    .out1_msg (out_msg_5),
-
-    .out2_val (forw_out_val[`VC_PORT_PICK_FIELD(1,`NEXT(5))]),
-    .out2_rdy (forw_out_rdy[`VC_PORT_PICK_FIELD(1,`NEXT(5))]),
-    .out2_msg (forw_out_msg[`VC_PORT_PICK_FIELD(m,`NEXT(5))]),
-    .cur_sd   (cur_sd)
-  );
-
-  plab4_net_RouterBase
-  #(
-    .p_payload_nbits  (p_payload_nbits),
-    .p_opaque_nbits   (p_opaque_nbits),
-    .p_srcdest_nbits  (p_srcdest_nbits),
-
-    .p_router_id      (6),
-    .p_num_routers    (c_num_ports)
-  )
-  router_6
-  (
-    .clk      (clk),
-    .reset    (reset),
-
-    .in0_val  (forw_in_val[`VC_PORT_PICK_FIELD(1,`PREV(6))]),
-    .in0_rdy  (forw_in_rdy[`VC_PORT_PICK_FIELD(1,`PREV(6))]),
-    .in0_msg  (forw_in_msg[`VC_PORT_PICK_FIELD(m,`PREV(6))]),
-
-    .in1_val  (in_val_6),
-    .in1_rdy  (in_rdy_6),
-    .in1_msg  (in_msg_6),
-    .in1_sd   (in_sd_6),
-
-    .in2_val  (backw_in_val[`VC_PORT_PICK_FIELD(1,`NEXT(6))]),
-    .in2_rdy  (backw_in_rdy[`VC_PORT_PICK_FIELD(1,`NEXT(6))]),
-    .in2_msg  (backw_in_msg[`VC_PORT_PICK_FIELD(m,`NEXT(6))]),
-
-    .out0_val (backw_out_val[`VC_PORT_PICK_FIELD(1,`PREV(6))]),
-    .out0_rdy (backw_out_rdy[`VC_PORT_PICK_FIELD(1,`PREV(6))]),
-    .out0_msg (backw_out_msg[`VC_PORT_PICK_FIELD(m,`PREV(6))]),
-
-    .out1_val (out_val_6),
-    .out1_rdy (out_rdy_6),
-    .out1_msg (out_msg_6),
-
-    .out2_val (forw_out_val[`VC_PORT_PICK_FIELD(1,`NEXT(6))]),
-    .out2_rdy (forw_out_rdy[`VC_PORT_PICK_FIELD(1,`NEXT(6))]),
-    .out2_msg (forw_out_msg[`VC_PORT_PICK_FIELD(m,`NEXT(6))]),
-    .cur_sd   (cur_sd)
-  );
-
-  plab4_net_RouterBase
-  #(
-    .p_payload_nbits  (p_payload_nbits),
-    .p_opaque_nbits   (p_opaque_nbits),
-    .p_srcdest_nbits  (p_srcdest_nbits),
-
-    .p_router_id      (7),
-    .p_num_routers    (c_num_ports)
-  )
-  router_7
-  (
-    .clk      (clk),
-    .reset    (reset),
-
-    .in0_val  (forw_in_val[`VC_PORT_PICK_FIELD(1,`PREV(7))]),
-    .in0_rdy  (forw_in_rdy[`VC_PORT_PICK_FIELD(1,`PREV(7))]),
-    .in0_msg  (forw_in_msg[`VC_PORT_PICK_FIELD(m,`PREV(7))]),
-
-    .in1_val  (in_val_7),
-    .in1_rdy  (in_rdy_7),
-    .in1_msg  (in_msg_7),
-    .in1_sd   (in_sd_7),
-
-    .in2_val  (backw_in_val[`VC_PORT_PICK_FIELD(1,`NEXT(7))]),
-    .in2_rdy  (backw_in_rdy[`VC_PORT_PICK_FIELD(1,`NEXT(7))]),
-    .in2_msg  (backw_in_msg[`VC_PORT_PICK_FIELD(m,`NEXT(7))]),
-
-    .out0_val (backw_out_val[`VC_PORT_PICK_FIELD(1,`PREV(7))]),
-    .out0_rdy (backw_out_rdy[`VC_PORT_PICK_FIELD(1,`PREV(7))]),
-    .out0_msg (backw_out_msg[`VC_PORT_PICK_FIELD(m,`PREV(7))]),
-
-    .out1_val (out_val_7),
-    .out1_rdy (out_rdy_7),
-    .out1_msg (out_msg_7),
-
-    .out2_val (forw_out_val[`VC_PORT_PICK_FIELD(1,`NEXT(7))]),
-    .out2_rdy (forw_out_rdy[`VC_PORT_PICK_FIELD(1,`NEXT(7))]),
-    .out2_msg (forw_out_msg[`VC_PORT_PICK_FIELD(m,`NEXT(7))]),
     .cur_sd   (cur_sd)
   );
 

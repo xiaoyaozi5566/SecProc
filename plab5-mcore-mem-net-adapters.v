@@ -62,9 +62,11 @@ module plab5_mcore_MemReqMsgToNetMsg
 )
 (
 
-  input  [c_mem_msg_nbits-1:0] mem_msg,
+  input  [c_mem_msg_nbits-1:0] {Domain sd} mem_msg,
 
-  output [c_net_msg_nbits-1:0] net_msg
+  output [c_net_msg_nbits-1:0] {Domain sd} net_msg,
+  
+  input                        {L} sd
 
 );
   // destination indexing from the memory address
@@ -74,8 +76,8 @@ module plab5_mcore_MemReqMsgToNetMsg
 
   // extract the address of the memory message to determine network source
 
-  wire [p_mem_addr_nbits-1:0]                 mem_addr;
-  wire [`VC_NET_MSG_DEST_NBITS(np,no,ns)-1:0] net_dest;
+  wire [p_mem_addr_nbits-1:0]                 {Domain sd} mem_addr;
+  wire [`VC_NET_MSG_DEST_NBITS(np,no,ns)-1:0] {Domain sd} net_dest;
 
   assign mem_addr = mem_msg[`VC_MEM_REQ_MSG_ADDR_FIELD(mo,ma,md)];
 
@@ -85,8 +87,8 @@ module plab5_mcore_MemReqMsgToNetMsg
 
   // we use high bits of the opaque field to put the destination info
 
-  wire [mo-1:0] mem_msg_opaque;
-  wire [mo-1:0] mem_src_opaque;
+  wire [mo-1:0] {Domain sd} mem_msg_opaque;
+  wire [mo-1:0] {Domain sd} mem_src_opaque;
 
   assign mem_msg_opaque = mem_msg[`VC_MEM_REQ_MSG_OPAQUE_FIELD(mo,ma,md)];
 
@@ -94,7 +96,7 @@ module plab5_mcore_MemReqMsgToNetMsg
 
   // we re-pack the memory message with the new opaque field
 
-  wire [`VC_MEM_REQ_MSG_NBITS(mo,ma,md)-1:0] net_payload;
+  wire [`VC_MEM_REQ_MSG_NBITS(mo,ma,md)-1:0] {Domain sd} net_payload;
 
   vc_MemReqMsgPack #(mo,ma,md) mem_pack
   (
@@ -104,7 +106,8 @@ module plab5_mcore_MemReqMsgToNetMsg
     .len    (mem_msg[`VC_MEM_REQ_MSG_LEN_FIELD(mo,ma,md)]),
     .data   (mem_msg[`VC_MEM_REQ_MSG_DATA_FIELD(mo,ma,md)]),
 
-    .msg    (net_payload)
+    .msg    (net_payload),
+    .sd     (sd)
   );
 
   // then we pack the memory message as a network message
@@ -122,7 +125,8 @@ module plab5_mcore_MemReqMsgToNetMsg
     .opaque   (4'h0),
     .payload  (net_payload),
 
-    .msg      (net_msg)
+    .msg      (net_msg),
+    .sd       (sd)
   );
 
 endmodule
@@ -176,23 +180,25 @@ module plab5_mcore_MemRespMsgToNetMsg
 )
 (
 
-  input  [c_mem_msg_nbits-1:0] mem_msg,
+  input  [c_mem_msg_nbits-1:0] {Domain sd} mem_msg,
 
-  output [c_net_msg_nbits-1:0] net_msg
+  output [c_net_msg_nbits-1:0] {Domain sd} net_msg,
+  
+  input                        {L} sd
 
 );
 
   // extract the opaque field from memory message
 
-  wire [p_mem_opaque_nbits-1:0]  mem_msg_opaque;
-  wire [p_net_srcdest_nbits-1:0] net_dest;
+  wire [p_mem_opaque_nbits-1:0]  {Domain sd} mem_msg_opaque;
+  wire [p_net_srcdest_nbits-1:0] {Domain sd} net_dest;
 
   assign mem_msg_opaque = mem_msg[`VC_MEM_RESP_MSG_OPAQUE_FIELD(mo,md)];
   assign net_dest = mem_msg_opaque[mo-1 -: ns];
 
   // re-pack the memory message without the destination opaque field
 
-  wire [`VC_MEM_RESP_MSG_NBITS(mo,md)-1:0] net_payload;
+  wire [`VC_MEM_RESP_MSG_NBITS(mo,md)-1:0] {Domain sd} net_payload;
 
   vc_MemRespMsgPack #(mo,md) mem_pack
   (
@@ -201,7 +207,8 @@ module plab5_mcore_MemRespMsgToNetMsg
     .len    (mem_msg[`VC_MEM_RESP_MSG_LEN_FIELD(mo,md)]),
     .data   (mem_msg[`VC_MEM_RESP_MSG_DATA_FIELD(mo,md)]),
 
-    .msg    (net_payload)
+    .msg    (net_payload),
+    .sd     (sd)
   );
 
   // then we pack the memory message as a network message
@@ -219,7 +226,8 @@ module plab5_mcore_MemRespMsgToNetMsg
     .opaque   (4'h0),
     .payload  (net_payload),
 
-    .msg      (net_msg)
+    .msg      (net_msg),
+    .sd       (sd)
   );
 
 endmodule
