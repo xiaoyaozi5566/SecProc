@@ -19,22 +19,23 @@ module vc_Regfile_1r1w
   // Local constants not meant to be set from outside the module
   parameter c_addr_nbits  = $clog2(p_num_entries)
 )(
-  input                     clk,
-  input                     reset,
+  input                     {L} clk,
+  input                     {L} reset,
 
   // Read port (combinational read)
 
-  input  [c_addr_nbits-1:0] read_addr,
-  output [p_data_nbits-1:0] read_data,
+  input  [c_addr_nbits-1:0] {Domain sd} read_addr,
+  output [p_data_nbits-1:0] {Domain sd} read_data,
 
   // Write port (sampled on the rising clock edge)
 
-  input                     write_en,
-  input  [c_addr_nbits-1:0] write_addr,
-  input  [p_data_nbits-1:0] write_data
+  input                     {Domain sd} write_en,
+  input  [c_addr_nbits-1:0] {Domain sd} write_addr,
+  input  [p_data_nbits-1:0] {Domain sd} write_data,
+  input                     {L} sd
 );
 
-  reg [p_data_nbits-1:0] rfile[p_num_entries-1:0];
+  reg [p_data_nbits-1:0] {Domain sd} rfile[p_num_entries-1:0];
 
   // Combinational read
 
@@ -78,22 +79,23 @@ module vc_ResetRegfile_1r1w
   // Local constants not meant to be set from outside the module
   parameter c_addr_nbits  = $clog2(p_num_entries)
 )(
-  input                     clk,
-  input                     reset,
+  input                     {L} clk,
+  input                     {L} reset,
 
   // Read port (combinational read)
 
-  input  [c_addr_nbits-1:0] read_addr,
-  output [p_data_nbits-1:0] read_data,
+  input  [c_addr_nbits-1:0] {Domain sd} read_addr,
+  output [p_data_nbits-1:0] {Domain sd} read_data,
 
   // Write port (sampled on the rising clock edge)
 
-  input                     write_en,
-  input [c_addr_nbits-1:0]  write_addr,
-  input [p_data_nbits-1:0]  write_data
+  input                     {Domain sd} write_en,
+  input [c_addr_nbits-1:0]  {Domain sd} write_addr,
+  input [p_data_nbits-1:0]  {Domain sd} write_data,
+  input                     {L} sd
 );
 
-  reg [p_data_nbits-1:0] rfile[p_num_entries-1:0];
+  reg [p_data_nbits-1:0] {Domain sd} rfile[p_num_entries-1:0];
 
   // Combinational read
 
@@ -145,27 +147,28 @@ module vc_Regfile_2r1w
   // Local constants not meant to be set from outside the module
   parameter c_addr_nbits  = $clog2(p_num_entries)
 )(
-  input                     clk,
-  input                     reset,
+  input                     {L} clk,
+  input                     {L} reset,
 
   // Read port 0 (combinational read)
 
-  input  [c_addr_nbits-1:0] read_addr0,
-  output [p_data_nbits-1:0] read_data0,
+  input  [c_addr_nbits-1:0] {Domain sd} read_addr0,
+  output [p_data_nbits-1:0] {Domain sd} read_data0,
 
   // Read port 1 (combinational read)
 
-  input  [c_addr_nbits-1:0] read_addr1,
-  output [p_data_nbits-1:0] read_data1,
+  input  [c_addr_nbits-1:0] {Domain sd} read_addr1,
+  output [p_data_nbits-1:0] {Domain sd} read_data1,
 
   // Write port (sampled on the rising clock edge)
 
-  input                     write_en,
-  input [c_addr_nbits-1:0]  write_addr,
-  input [p_data_nbits-1:0]  write_data
+  input                     {Domain sd} write_en,
+  input [c_addr_nbits-1:0]  {Domain sd} write_addr,
+  input [p_data_nbits-1:0]  {Domain sd} write_data,
+  input                     {L} sd
 );
 
-  reg [p_data_nbits-1:0] rfile[p_num_entries-1:0];
+  reg [p_data_nbits-1:0] {Domain sd} rfile[p_num_entries-1:0];
 
   // Combinational read
 

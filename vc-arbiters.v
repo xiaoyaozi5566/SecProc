@@ -106,11 +106,12 @@ module vc_VariableArbChain
 #(
   parameter p_num_reqs = 2
 )(
-  input                   kin,       // kill in
-  input  [p_num_reqs-1:0] priority,  // (one-hot) 1 is req w/ highest pri
-  input  [p_num_reqs-1:0] reqs,      // 1 = making a req, 0 = no req
-  output [p_num_reqs-1:0] grants,    // (one-hot) 1 is req won grant
-  output                  kout       // kill out
+  input                   {Domain sd} kin,       // kill in
+  input  [p_num_reqs-1:0] {Domain sd} priority,  // (one-hot) 1 is req w/ highest pri
+  input  [p_num_reqs-1:0] {Domain sd} reqs,      // 1 = making a req, 0 = no req
+  output [p_num_reqs-1:0] {Domain sd} grants,    // (one-hot) 1 is req won grant
+  output                  {Domain sd} kout,       // kill out
+  input                   {L} sd
 );
 
   // The internal kills signals essentially form a kill chain from the
@@ -122,12 +123,12 @@ module vc_VariableArbChain
   // Principles and Practices of Interconnection Networks, Dally +
   // Towles, p354 for more info.
 
-  wire [2*p_num_reqs:0] kills;
+  wire [2*p_num_reqs:0] {Domain sd} kills;
   assign kills[0] = 1'b1;
 
-  wire [2*p_num_reqs-1:0] priority_int = { {p_num_reqs{1'b0}}, priority };
-  wire [2*p_num_reqs-1:0] reqs_int     = { reqs, reqs };
-  wire [2*p_num_reqs-1:0] grants_int;
+  wire [2*p_num_reqs-1:0] {Domain sd} priority_int = { {p_num_reqs{1'b0}}, priority };
+  wire [2*p_num_reqs-1:0] {Domain sd} reqs_int     = { reqs, reqs };
+  wire [2*p_num_reqs-1:0] {Domain sd} grants_int;
 
   // The per requester logic first computes the grant signal and then
   // computes the kill signal for the next requester.
@@ -176,12 +177,13 @@ module vc_VariableArb
 #(
   parameter p_num_reqs = 2
 )(
-  input  [p_num_reqs-1:0] priority,  // (one-hot) 1 is req w/ highest pri
-  input  [p_num_reqs-1:0] reqs,      // 1 = making a req, 0 = no req
-  output [p_num_reqs-1:0] grants     // (one-hot) 1 is req won grant
+  input  [p_num_reqs-1:0] {Domain sd} priority,  // (one-hot) 1 is req w/ highest pri
+  input  [p_num_reqs-1:0] {Domain sd} reqs,      // 1 = making a req, 0 = no req
+  output [p_num_reqs-1:0] {Domain sd} grants,     // (one-hot) 1 is req won grant
+  input                   {L} sd
 );
 
-  wire dummy_kout;
+  wire {Domain sd} dummy_kout;
 
   vc_VariableArbChain#(p_num_reqs) variable_arb_chain
   (
@@ -189,7 +191,8 @@ module vc_VariableArb
     .priority (priority),
     .reqs     (reqs),
     .grants   (grants),
-    .kout     (dummy_kout)
+    .kout     (dummy_kout),
+    .sd       (sd)
   );
 
 endmodule
@@ -205,26 +208,27 @@ module vc_RoundRobinArbChain
   parameter p_num_reqs             = 2,
   parameter p_priority_reset_value = 1  // (one-hot) 1 = high priority req
 )(
-  input                   clk,
-  input                   reset,
-  input                   kin,    // kill in
-  input  [p_num_reqs-1:0] reqs,   // 1 = making a req, 0 = no req
-  output [p_num_reqs-1:0] grants, // (one-hot) 1 is req won grant
-  output                  kout    // kill out
+  input                   {L} clk,
+  input                   {L} reset,
+  input                   {Domain sd} kin,    // kill in
+  input  [p_num_reqs-1:0] {Domain sd} reqs,   // 1 = making a req, 0 = no req
+  output [p_num_reqs-1:0] {Domain sd} grants, // (one-hot) 1 is req won grant
+  output                  {Domain sd} kout,    // kill out
+  input                   {L} sd
 );
 
   // We only update the priority if a requester actually received a grant
 
-  wire priority_en = |grants;
+  wire {Domain sd} priority_en = |grants;
 
   // Next priority is just the one-hot grant vector left rotated by one
 
-  wire [p_num_reqs-1:0] priority_next
+  wire [p_num_reqs-1:0] {Domain sd} priority_next
     = { grants[p_num_reqs-2:0], grants[p_num_reqs-1] };
 
   // State for the one-hot priority vector
 
-  wire [p_num_reqs-1:0] priority;
+  wire [p_num_reqs-1:0] {Domain sd} priority;
 
   vc_EnResetReg#(p_num_reqs,p_priority_reset_value) priority_reg
   (
@@ -232,7 +236,8 @@ module vc_RoundRobinArbChain
     .reset (reset),
     .en    (priority_en),
     .d     (priority_next),
-    .q     (priority)
+    .q     (priority),
+    .sd    (sd)
   );
 
   // Variable arbiter chain
@@ -262,24 +267,25 @@ endmodule
 
 module vc_RoundRobinArb #( parameter p_num_reqs = 2 )
 (
-  input                 clk,
-  input                 reset,
-  input  [p_num_reqs-1:0] reqs,    // 1 = making a req, 0 = no req
-  output [p_num_reqs-1:0] grants   // (one-hot) 1 is req won grant
+  input                 {L} clk,
+  input                 {L} reset,
+  input  [p_num_reqs-1:0] {Domain sd} reqs,    // 1 = making a req, 0 = no req
+  output [p_num_reqs-1:0] {Domain sd} grants,   // (one-hot) 1 is req won grant
+  input                 {L} sd
 );
 
   // We only update the priority if a requester actually received a grant
 
-  wire priority_en = |grants;
+  wire {Domain sd} priority_en = |grants;
 
   // Next priority is just the one-hot grant vector left rotated by one
 
-  wire [p_num_reqs-1:0] priority_next
+  wire [p_num_reqs-1:0] {Domain sd} priority_next
     = { grants[p_num_reqs-2:0], grants[p_num_reqs-1] };
 
   // State for the one-hot priority vector
 
-  wire [p_num_reqs-1:0] priority;
+  wire [p_num_reqs-1:0] {Domain sd} priority;
 
   vc_EnResetReg#(p_num_reqs,1) priority_reg
   (
@@ -287,12 +293,13 @@ module vc_RoundRobinArb #( parameter p_num_reqs = 2 )
     .reset (reset),
     .en    (priority_en),
     .d     (priority_next),
-    .q     (priority)
+    .q     (priority),
+    .sd    (sd)
   );
 
   // Variable arbiter chain
 
-  wire dummy_kout;
+  wire {Domain sd} dummy_kout;
 
   vc_VariableArbChain#(p_num_reqs) variable_arb_chain
   (

@@ -22,9 +22,10 @@ module vc_Reg
 #(
   parameter p_nbits = 1
 )(
-  input                clk, // Clock input
-  output reg [p_nbits-1:0] q,   // Data output
-  input  [p_nbits-1:0] d    // Data input (sampled on rising clk edge)
+  input                {L} clk, // Clock input
+  output reg [p_nbits-1:0] {Domain sd} q,   // Data output
+  input  [p_nbits-1:0] {Domain sd} d,    // Data input (sampled on rising clk edge)
+  input                {L} sd
 );
 
   always @( posedge clk )
@@ -41,10 +42,11 @@ module vc_ResetReg
   parameter p_nbits       = 1,
   parameter p_reset_value = 0
 )(
-  input                clk,   // Clock input
-  input                reset, // Sync reset input (sampled on rising edge)
-  output reg [p_nbits-1:0] q,     // Data output
-  input  [p_nbits-1:0] d      // Data input (sampled on rising clk edge)
+  input                {L} clk,   // Clock input
+  input                {L} reset, // Sync reset input (sampled on rising edge)
+  output reg [p_nbits-1:0] {Domain sd} q,     // Data output
+  input  [p_nbits-1:0] {Domain sd} d,      // Data input (sampled on rising clk edge)
+  input                {L} sd
 );
 
   always @( posedge clk )
@@ -60,11 +62,12 @@ module vc_EnReg
 #(
   parameter p_nbits = 1
 )(
-  input                clk,   // Clock input
-  input                reset, // Sync reset input (sampled on rising edge)
-  output reg [p_nbits-1:0] q,     // Data output
-  input  [p_nbits-1:0] d,     // Data input (sampled on rising clk edge)
-  input                en     // Enable input (sampled on rising clk edge)
+  input                {L} clk,   // Clock input
+  input                {L} reset, // Sync reset input (sampled on rising edge)
+  output reg [p_nbits-1:0] {Domain sd} q,     // Data output
+  input  [p_nbits-1:0] {Domain sd} d,     // Data input (sampled on rising clk edge)
+  input                {Domain sd} en,     // Enable input (sampled on rising clk edge)
+  input                {L} sd
 );
 
   always @( posedge clk )
@@ -88,11 +91,12 @@ module vc_EnResetReg
   parameter p_nbits       = 1,
   parameter p_reset_value = 0
 )(
-  input                clk,   // Clock input
-  input                reset, // Sync reset input (sampled on rising edge)
-  output reg [p_nbits-1:0] q,     // Data output
-  input  [p_nbits-1:0] d,     // Data input (sampled on rising clk edge)
-  input                en     // Enable input (sampled on rising clk edge)
+  input                {L} clk,   // Clock input
+  input                {L} reset, // Sync reset input (sampled on rising edge)
+  output reg [p_nbits-1:0] {Domain sd} q,     // Data output
+  input  [p_nbits-1:0] {Domain sd} d,     // Data input (sampled on rising clk edge)
+  input                {Domain sd} en,     // Enable input (sampled on rising clk edge)
+  input                {L} sd
 );
 
   always @( posedge clk )

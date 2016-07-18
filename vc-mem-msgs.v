@@ -152,15 +152,16 @@ module vc_MemReqMsgPack
 )(
   // Input message
 
-  input  [`VC_MEM_REQ_MSG_TYPE_NBITS(o,a,d)-1:0]   type,
-  input  [`VC_MEM_REQ_MSG_OPAQUE_NBITS(o,a,d)-1:0] opaque,
-  input  [`VC_MEM_REQ_MSG_ADDR_NBITS(o,a,d)-1:0]   addr,
-  input  [`VC_MEM_REQ_MSG_LEN_NBITS(o,a,d)-1:0]    len,
-  input  [`VC_MEM_REQ_MSG_DATA_NBITS(o,a,d)-1:0]   data,
+  input  [`VC_MEM_REQ_MSG_TYPE_NBITS(o,a,d)-1:0]   {Domain sd} type,
+  input  [`VC_MEM_REQ_MSG_OPAQUE_NBITS(o,a,d)-1:0] {Domain sd} opaque,
+  input  [`VC_MEM_REQ_MSG_ADDR_NBITS(o,a,d)-1:0]   {Domain sd} addr,
+  input  [`VC_MEM_REQ_MSG_LEN_NBITS(o,a,d)-1:0]    {Domain sd} len,
+  input  [`VC_MEM_REQ_MSG_DATA_NBITS(o,a,d)-1:0]   {Domain sd} data,
+  input                                            {L} sd,
 
   // Output bits
 
-  output [`VC_MEM_REQ_MSG_NBITS(o,a,d)-1:0]        msg
+  output [`VC_MEM_REQ_MSG_NBITS(o,a,d)-1:0]        {Domain sd} msg
 );
 
   assign msg[`VC_MEM_REQ_MSG_TYPE_FIELD(o,a,d)]   = type;
@@ -189,15 +190,16 @@ module vc_MemReqMsgUnpack
 
   // Input bits
 
-  input [`VC_MEM_REQ_MSG_NBITS(o,a,d)-1:0]         msg,
+  input [`VC_MEM_REQ_MSG_NBITS(o,a,d)-1:0]         {Domain sd} msg,
 
   // Output message
 
-  output [`VC_MEM_REQ_MSG_TYPE_NBITS(o,a,d)-1:0]   type,
-  output [`VC_MEM_REQ_MSG_OPAQUE_NBITS(o,a,d)-1:0] opaque,
-  output [`VC_MEM_REQ_MSG_ADDR_NBITS(o,a,d)-1:0]   addr,
-  output [`VC_MEM_REQ_MSG_LEN_NBITS(o,a,d)-1:0]    len,
-  output [`VC_MEM_REQ_MSG_DATA_NBITS(o,a,d)-1:0]   data
+  output [`VC_MEM_REQ_MSG_TYPE_NBITS(o,a,d)-1:0]   {Domain sd} type,
+  output [`VC_MEM_REQ_MSG_OPAQUE_NBITS(o,a,d)-1:0] {Domain sd} opaque,
+  output [`VC_MEM_REQ_MSG_ADDR_NBITS(o,a,d)-1:0]   {Domain sd} addr,
+  output [`VC_MEM_REQ_MSG_LEN_NBITS(o,a,d)-1:0]    {Domain sd} len,
+  output [`VC_MEM_REQ_MSG_DATA_NBITS(o,a,d)-1:0]   {Domain sd} data,
+  input                                            {L} sd
 );
 
   assign type   = msg[`VC_MEM_REQ_MSG_TYPE_FIELD(o,a,d)];
@@ -223,20 +225,21 @@ module vc_MemReqMsgTrace
   parameter a = p_addr_nbits,
   parameter d = p_data_nbits
 )(
-  input                                    clk,
-  input                                    reset,
-  input                                    val,
-  input                                    rdy,
-  input [`VC_MEM_REQ_MSG_NBITS(o,a,d)-1:0] msg
+  input                                    {L} clk,
+  input                                    {L} reset,
+  input                                    {Domain sd} val,
+  input                                    {Domain sd} rdy,
+  input [`VC_MEM_REQ_MSG_NBITS(o,a,d)-1:0] {Domain sd} msg,
+  input                                    {L} sd
 );
 
   // Extract fields
 
-  wire [`VC_MEM_REQ_MSG_TYPE_NBITS(o,a,d)-1:0]   type;
-  wire [`VC_MEM_REQ_MSG_OPAQUE_NBITS(o,a,d)-1:0] opaque;
-  wire [`VC_MEM_REQ_MSG_ADDR_NBITS(o,a,d)-1:0]   addr;
-  wire [`VC_MEM_REQ_MSG_LEN_NBITS(o,a,d)-1:0]    len;
-  wire [`VC_MEM_REQ_MSG_DATA_NBITS(o,a,d)-1:0]   data;
+  wire [`VC_MEM_REQ_MSG_TYPE_NBITS(o,a,d)-1:0]   {Domain sd} type;
+  wire [`VC_MEM_REQ_MSG_OPAQUE_NBITS(o,a,d)-1:0] {Domain sd} opaque;
+  wire [`VC_MEM_REQ_MSG_ADDR_NBITS(o,a,d)-1:0]   {Domain sd} addr;
+  wire [`VC_MEM_REQ_MSG_LEN_NBITS(o,a,d)-1:0]    {Domain sd} len;
+  wire [`VC_MEM_REQ_MSG_DATA_NBITS(o,a,d)-1:0]   {Domain sd} data;
 
   vc_MemReqMsgUnpack#(o,a,d) mem_req_msg_unpack
   (
@@ -245,7 +248,8 @@ module vc_MemReqMsgTrace
     .opaque (opaque),
     .addr   (addr),
     .len    (len),
-    .data   (data)
+    .data   (data),
+    .sd     (sd)
   );
 
   // Short names
@@ -430,14 +434,15 @@ module vc_MemRespMsgPack
 )(
   // Input message
 
-  input  [`VC_MEM_RESP_MSG_TYPE_NBITS(o,d)-1:0]   type,
-  input  [`VC_MEM_RESP_MSG_OPAQUE_NBITS(o,d)-1:0] opaque,
-  input  [`VC_MEM_RESP_MSG_LEN_NBITS(o,d)-1:0]    len,
-  input  [`VC_MEM_RESP_MSG_DATA_NBITS(o,d)-1:0]   data,
+  input  [`VC_MEM_RESP_MSG_TYPE_NBITS(o,d)-1:0]   {Domain sd} type,
+  input  [`VC_MEM_RESP_MSG_OPAQUE_NBITS(o,d)-1:0] {Domain sd} opaque,
+  input  [`VC_MEM_RESP_MSG_LEN_NBITS(o,d)-1:0]    {Domain sd} len,
+  input  [`VC_MEM_RESP_MSG_DATA_NBITS(o,d)-1:0]   {Domain sd} data,
 
   // Output bits
 
-  output [`VC_MEM_RESP_MSG_NBITS(o,d)-1:0]        msg
+  output [`VC_MEM_RESP_MSG_NBITS(o,d)-1:0]        {Domain sd} msg,
+  input                                           {L} sd
 );
 
   assign msg[`VC_MEM_RESP_MSG_TYPE_FIELD(o,d)]   = type;
@@ -463,14 +468,15 @@ module vc_MemRespMsgUnpack
 
   // Input bits
 
-  input [`VC_MEM_RESP_MSG_NBITS(o,d)-1:0]         msg,
+  input [`VC_MEM_RESP_MSG_NBITS(o,d)-1:0]         {Domain sd} msg,
 
   // Output message
 
-  output [`VC_MEM_RESP_MSG_TYPE_NBITS(o,d)-1:0]   type,
-  output [`VC_MEM_RESP_MSG_OPAQUE_NBITS(o,d)-1:0] opaque,
-  output [`VC_MEM_RESP_MSG_LEN_NBITS(o,d)-1:0]    len,
-  output [`VC_MEM_RESP_MSG_DATA_NBITS(o,d)-1:0]   data
+  output [`VC_MEM_RESP_MSG_TYPE_NBITS(o,d)-1:0]   {Domain sd} type,
+  output [`VC_MEM_RESP_MSG_OPAQUE_NBITS(o,d)-1:0] {Domain sd} opaque,
+  output [`VC_MEM_RESP_MSG_LEN_NBITS(o,d)-1:0]    {Domain sd} len,
+  output [`VC_MEM_RESP_MSG_DATA_NBITS(o,d)-1:0]   {Domain sd} data,
+  input                                           {L} sd
 );
 
   assign type   = msg[`VC_MEM_RESP_MSG_TYPE_FIELD(o,d)];
@@ -493,19 +499,20 @@ module vc_MemRespMsgTrace
   parameter o = p_opaque_nbits,
   parameter d = p_data_nbits
 )(
-  input                                     clk,
-  input                                     reset,
-  input                                     val,
-  input                                     rdy,
-  input [`VC_MEM_RESP_MSG_NBITS(o,d)-1:0] msg
+  input                                     {L} clk,
+  input                                     {L} reset,
+  input                                     {Domain sd} val,
+  input                                     {Domain sd} rdy,
+  input [`VC_MEM_RESP_MSG_NBITS(o,d)-1:0]   {Domain sd} msg,
+  input                                     {L} sd
 );
 
   // Extract fields
 
-  wire [`VC_MEM_RESP_MSG_TYPE_NBITS(o,d)-1:0]   type;
-  wire [`VC_MEM_RESP_MSG_OPAQUE_NBITS(o,d)-1:0] opaque;
-  wire [`VC_MEM_RESP_MSG_LEN_NBITS(o,d)-1:0]    len;
-  wire [`VC_MEM_RESP_MSG_DATA_NBITS(o,d)-1:0]   data;
+  wire [`VC_MEM_RESP_MSG_TYPE_NBITS(o,d)-1:0]   {Domain sd} type;
+  wire [`VC_MEM_RESP_MSG_OPAQUE_NBITS(o,d)-1:0] {Domain sd} opaque;
+  wire [`VC_MEM_RESP_MSG_LEN_NBITS(o,d)-1:0]    {Domain sd} len;
+  wire [`VC_MEM_RESP_MSG_DATA_NBITS(o,d)-1:0]   {Domain sd} data;
 
   vc_MemRespMsgUnpack#(o,d) mem_req_msg_unpack
   (
@@ -513,7 +520,8 @@ module vc_MemRespMsgTrace
     .type   (type),
     .opaque (opaque),
     .len    (len),
-    .data   (data)
+    .data   (data),
+    .sd     (sd)
   );
 
   // Short names

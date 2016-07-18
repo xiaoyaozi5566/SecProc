@@ -212,40 +212,40 @@ always @( posedge clk ) begin
   trace_cycles <= ( reset ) ? 0 : trace_cycles_next;
 end
 
-task trace_display;
-begin
-
-  if ( _vc_trace_level > 0 ) begin
-
-    // Reset the counter in the trace
-
-    _vc_trace_storage[15:0] = vc_trace_nchars-1;
-
-    // Trace this module
-
-    trace_module( _vc_trace_storage );
-
-    // Output the trace cycle number
-
-    $write( "%4d: ", trace_cycles );
-
-    // Output the trace
-
-    _vc_trace_idx0 = _vc_trace_storage[15:0];
-    for ( _vc_trace_idx1 = vc_trace_nchars-1;
-          _vc_trace_idx1 > _vc_trace_idx0;
-          _vc_trace_idx1 = _vc_trace_idx1 - 1 )
-    begin
-      $write( "%s", _vc_trace_storage[_vc_trace_idx1*8+:8] );
-    end
-    $write("\n");
-
-  end
-
-  // Bump the trace cycle counter
-
-  trace_cycles_next = trace_cycles + 1;
-
-end
-endtask
+// task trace_display;
+// begin
+//
+//   if ( _vc_trace_level > 0 ) begin
+//
+//     // Reset the counter in the trace
+//
+//     _vc_trace_storage[15:0] = vc_trace_nchars-1;
+//
+//     // Trace this module
+//
+//     trace_module( _vc_trace_storage );
+//
+//     // Output the trace cycle number
+//
+//     $write( "%4d: ", trace_cycles );
+//
+//     // Output the trace
+//
+//     _vc_trace_idx0 = _vc_trace_storage[15:0];
+//     for ( _vc_trace_idx1 = vc_trace_nchars-1;
+//           _vc_trace_idx1 > _vc_trace_idx0;
+//           _vc_trace_idx1 = _vc_trace_idx1 - 1 )
+//     begin
+//       $write( "%s", _vc_trace_storage[_vc_trace_idx1*8+:8] );
+//     end
+//     $write("\n");
+//
+//   end
+//
+//   // Bump the trace cycle counter
+//
+//   trace_cycles_next = trace_cycles + 1;
+//
+// end
+// endtask
 

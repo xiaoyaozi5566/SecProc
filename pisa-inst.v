@@ -1243,18 +1243,19 @@ module pisa_InstUnpack
 (
   // Packed message
 
-  input  [`PISA_INST_NBITS-1:0]        inst,
+  input  [`PISA_INST_NBITS-1:0]        {Domain sd} inst,
 
   // Packed fields
 
-  output [`PISA_INST_OPCODE_NBITS-1:0] opcode,
-  output [`PISA_INST_RS_NBITS-1:0]     rs,
-  output [`PISA_INST_RT_NBITS-1:0]     rt,
-  output [`PISA_INST_RD_NBITS-1:0]     rd,
-  output [`PISA_INST_SHAMT_NBITS-1:0]  shamt,
-  output [`PISA_INST_FUNC_NBITS-1:0]   func,
-  output [`PISA_INST_IMM_NBITS-1:0]    imm,
-  output [`PISA_INST_TARGET_NBITS-1:0] target
+  output [`PISA_INST_OPCODE_NBITS-1:0] {Domain sd} opcode,
+  output [`PISA_INST_RS_NBITS-1:0]     {Domain sd} rs,
+  output [`PISA_INST_RT_NBITS-1:0]     {Domain sd} rt,
+  output [`PISA_INST_RD_NBITS-1:0]     {Domain sd} rd,
+  output [`PISA_INST_SHAMT_NBITS-1:0]  {Domain sd} shamt,
+  output [`PISA_INST_FUNC_NBITS-1:0]   {Domain sd} func,
+  output [`PISA_INST_IMM_NBITS-1:0]    {Domain sd} imm,
+  output [`PISA_INST_TARGET_NBITS-1:0] {Domain sd} target,
+  input                                {L} sd
 );
 
   assign opcode   = inst[`PISA_INST_OPCODE];

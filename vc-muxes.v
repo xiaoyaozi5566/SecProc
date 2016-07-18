@@ -38,6 +38,32 @@ module vc_Mux2
 #(
   parameter p_nbits = 1
 )(
+  input      [p_nbits-1:0] {Domain sd} in0,
+  input      [p_nbits-1:0] {Domain sd} in1,
+  input                    {Domain sd} sel,
+  output reg [p_nbits-1:0] {Domain sd} out,
+  input                    {L} sd
+);
+
+  always @(*)
+  begin
+    case ( sel )
+      1'd0 : out = in0;
+      1'd1 : out = in1;
+      default : out = {p_nbits{1'bx}};
+    endcase
+  end
+
+endmodule
+
+//------------------------------------------------------------------------
+// 2 Input Mux
+//------------------------------------------------------------------------
+
+module vc_Mux2_low
+#(
+  parameter p_nbits = 1
+)(
   input      [p_nbits-1:0] in0,
   input      [p_nbits-1:0] in1,
   input                    sel,
@@ -63,9 +89,10 @@ module vc_Mux3
 #(
   parameter p_nbits = 1
 )(
-  input      [p_nbits-1:0] in0, in1, in2,
-  input              [1:0] sel,
-  output reg [p_nbits-1:0] out
+  input      [p_nbits-1:0] {Domain sd} in0, in1, in2,
+  input              [1:0] {Domain sd} sel,
+  output reg [p_nbits-1:0] {Domain sd} out,
+  input                    {L} sd
 );
 
   always @(*)
@@ -88,9 +115,10 @@ module vc_Mux4
 #(
   parameter p_nbits = 1
 )(
-  input      [p_nbits-1:0] in0, in1, in2, in3,
-  input              [1:0] sel,
-  output reg [p_nbits-1:0] out
+  input      [p_nbits-1:0] {Domain sd} in0, in1, in2, in3,
+  input              [1:0] {Domain sd} sel,
+  output reg [p_nbits-1:0] {Domain sd} out,
+  input                    {L} sd
 );
 
   always @(*)
@@ -114,9 +142,10 @@ module vc_Mux5
 #(
  parameter p_nbits = 1
 )(
-  input      [p_nbits-1:0] in0, in1, in2, in3, in4,
-  input              [2:0] sel,
-  output reg [p_nbits-1:0] out
+  input      [p_nbits-1:0] {Domain sd} in0, in1, in2, in3, in4,
+  input              [2:0] {Domain sd} sel,
+  output reg [p_nbits-1:0] {Domain sd} out,
+  input                    {L} sd
 );
 
   always @(*)
@@ -141,9 +170,10 @@ module vc_Mux6
 #(
   parameter p_nbits = 1
 )(
-  input      [p_nbits-1:0] in0, in1, in2, in3, in4, in5,
-  input              [2:0] sel,
-  output reg [p_nbits-1:0] out
+  input      [p_nbits-1:0] {Domain sd} in0, in1, in2, in3, in4, in5,
+  input              [2:0] {Domain sd} sel,
+  output reg [p_nbits-1:0] {Domain sd} out,
+  input                    {L} sd
 );
 
   always @(*)
@@ -169,9 +199,10 @@ module vc_Mux7
 #(
   parameter p_nbits = 1
 )(
-  input      [p_nbits-1:0] in0, in1, in2, in3, in4, in5, in6,
-  input              [2:0] sel,
-  output reg [p_nbits-1:0] out
+  input      [p_nbits-1:0] {Domain sd} in0, in1, in2, in3, in4, in5, in6,
+  input              [2:0] {Domain sd} sel,
+  output reg [p_nbits-1:0] {Domain sd} out,
+  input                    {L} sd
 );
 
   always @(*)
@@ -198,9 +229,10 @@ module vc_Mux8
 #(
   parameter p_nbits = 1
 )(
-  input      [p_nbits-1:0] in0, in1, in2, in3, in4, in5, in6, in7,
-  input              [2:0] sel,
-  output reg [p_nbits-1:0] out
+  input      [p_nbits-1:0] {Domain sd} in0, in1, in2, in3, in4, in5, in6, in7,
+  input              [2:0] {Domain sd} sel,
+  output reg [p_nbits-1:0] {Domain sd} out,
+  input                    {L} sd
 );
 
   always @(*)

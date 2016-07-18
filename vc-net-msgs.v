@@ -87,14 +87,15 @@ module vc_NetMsgPack
 (
   // Input message
 
-  input [`VC_NET_MSG_DEST_NBITS(p,o,s)-1:0]    dest,
-  input [`VC_NET_MSG_SRC_NBITS(p,o,s)-1:0]     src,
-  input [`VC_NET_MSG_OPAQUE_NBITS(p,o,s)-1:0]  opaque,
-  input [`VC_NET_MSG_PAYLOAD_NBITS(p,o,s)-1:0] payload,
+  input [`VC_NET_MSG_DEST_NBITS(p,o,s)-1:0]    {Domain sd} dest,
+  input [`VC_NET_MSG_SRC_NBITS(p,o,s)-1:0]     {Domain sd} src,
+  input [`VC_NET_MSG_OPAQUE_NBITS(p,o,s)-1:0]  {Domain sd} opaque,
+  input [`VC_NET_MSG_PAYLOAD_NBITS(p,o,s)-1:0] {Domain sd} payload,
 
   // Output msg
 
-  output [`VC_NET_MSG_NBITS(p,o,s)-1:0]        msg
+  output [`VC_NET_MSG_NBITS(p,o,s)-1:0]        {Domain sd} msg,
+  input                                        {L} sd
 );
 
   assign msg[`VC_NET_MSG_DEST_FIELD(p,o,s)]    = dest;
@@ -122,14 +123,15 @@ module vc_NetMsgUnpack
 (
   // Input message
 
-  input  [`VC_NET_MSG_NBITS(p,o,s)-1:0] msg,
+  input  [`VC_NET_MSG_NBITS(p,o,s)-1:0] {Domain sd} msg,
 
   // Output message
 
-  output [`VC_NET_MSG_DEST_NBITS(p,o,s)-1:0]    dest,
-  output [`VC_NET_MSG_SRC_NBITS(p,o,s)-1:0]     src,
-  output [`VC_NET_MSG_OPAQUE_NBITS(p,o,s)-1:0]  opaque,
-  output [`VC_NET_MSG_PAYLOAD_NBITS(p,o,s)-1:0] payload
+  output [`VC_NET_MSG_DEST_NBITS(p,o,s)-1:0]    {Domain sd} dest,
+  output [`VC_NET_MSG_SRC_NBITS(p,o,s)-1:0]     {Domain sd} src,
+  output [`VC_NET_MSG_OPAQUE_NBITS(p,o,s)-1:0]  {Domain sd} opaque,
+  output [`VC_NET_MSG_PAYLOAD_NBITS(p,o,s)-1:0] {Domain sd} payload,
+  input                                         {L} sd
 );
 
   assign dest    = msg[`VC_NET_MSG_DEST_FIELD(p,o,s)];
@@ -155,19 +157,20 @@ module vc_NetMsgTrace
   parameter s = p_srcdest_nbits
 )
 (
-  input                                 clk,
-  input                                 reset,
-  input                                 val,
-  input                                 rdy,
-  input  [`VC_NET_MSG_NBITS(p,o,s)-1:0] msg
+  input                                 {L} clk,
+  input                                 {L} reset,
+  input                                 {Domain sd} val,
+  input                                 {Domain sd} rdy,
+  input  [`VC_NET_MSG_NBITS(p,o,s)-1:0] {Domain sd} msg,
+  input                                 {L} sd
 );
 
   // Extract fields
 
-  wire [`VC_NET_MSG_DEST_FIELD(p,o,s)]    dest;
-  wire [`VC_NET_MSG_SRC_FIELD(p,o,s)]     src;
-  wire [`VC_NET_MSG_OPAQUE_FIELD(p,o,s)]  opaque;
-  wire [`VC_NET_MSG_PAYLOAD_FIELD(p,o,s)] payload;
+  wire [`VC_NET_MSG_DEST_FIELD(p,o,s)]    {Domain sd} dest;
+  wire [`VC_NET_MSG_SRC_FIELD(p,o,s)]     {Domain sd} src;
+  wire [`VC_NET_MSG_OPAQUE_FIELD(p,o,s)]  {Domain sd} opaque;
+  wire [`VC_NET_MSG_PAYLOAD_FIELD(p,o,s)] {Domain sd} payload;
 
   vc_NetMsgUnpack#(p,o,s) net_msg_unpack
   (
@@ -175,7 +178,8 @@ module vc_NetMsgTrace
     .dest    (dest),
     .src     (src),
     .opaque  (opaque),
-    .payload (payload)
+    .payload (payload),
+    .sd      (sd)
   );
 
   // Line tracing

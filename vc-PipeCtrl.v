@@ -12,25 +12,26 @@
 
 module vc_PipeCtrl
 (
-  input         clk,
-  input         reset,
+  input         {L} clk,
+  input         {L} reset,
 
-  input         prev_val,     // valid bit from the prev stage
-  output        prev_stall,   // aggr stall signal for the prev stage
-  output        prev_squash,  // aggr squash signal for the prev stage
+  input         {Domain sd} prev_val,     // valid bit from the prev stage
+  output        {Domain sd} prev_stall,   // aggr stall signal for the prev stage
+  output        {Domain sd} prev_squash,  // aggr squash signal for the prev stage
 
-  output        curr_reg_en,  // pipeline reg enable for the current stage
-  output        curr_val,     // combinational valid bit for the current stage
-  input         curr_stall,   // stall signal from the current stage
-  input         curr_squash,  // squash signal from the current stage
+  output        {Domain sd} curr_reg_en,  // pipeline reg enable for the current stage
+  output        {Domain sd} curr_val,     // combinational valid bit for the current stage
+  input         {Domain sd} curr_stall,   // stall signal from the current stage
+  input         {Domain sd} curr_squash,  // squash signal from the current stage
 
-  output        next_val,     // valid bit for the next stage
-  input         next_stall,   // stall signal from the next stage
-  input         next_squash   // squash signal from the next stage
+  output        {Domain sd} next_val,     // valid bit for the next stage
+  input         {Domain sd} next_stall,   // stall signal from the next stage
+  input         {Domain sd} next_squash,   // squash signal from the next stage
+  input         {L} sd
 );
 
   // register that propogates the valid signal
-  wire reg_en;
+  wire {Domain sd} reg_en;
 
   vc_EnResetReg #(1, 0) val_reg
   (
