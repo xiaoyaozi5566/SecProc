@@ -11,6 +11,7 @@
 `include "plab3-mem-BlockingCacheAlt.v"
 `include "plab3-mem-BLockingCacheL2.v"
 `include "plab5-mcore-MemNet.v"
+`include "plab5-mcore-RefillNet.v"
 
 module plab5_mcore_ProcCacheNetAlt
 #(
@@ -35,36 +36,36 @@ module plab5_mcore_ProcCacheNetAlt
   parameter c_memresp_nbits = `VC_MEM_RESP_MSG_NBITS(o,l)
 )
 (
-  input clk,
-  input reset,
+  input {L} clk,
+  input {L} reset,
 
   // proc0 manager ports
 
-  input  [31:0] proc0_from_mngr_msg,
-  input         proc0_from_mngr_val,
-  output        proc0_from_mngr_rdy,
+  input  [31:0] {D0} proc0_from_mngr_msg,
+  input         {D0} proc0_from_mngr_val,
+  output        {D0} proc0_from_mngr_rdy,
 
-  output [31:0] proc0_to_mngr_msg,
-  output        proc0_to_mngr_val,
-  input         proc0_to_mngr_rdy,
+  output [31:0] {D0} proc0_to_mngr_msg,
+  output        {D0} proc0_to_mngr_val,
+  input         {D0} proc0_to_mngr_rdy,
 
-  output  [c_memreq_nbits-1:0] memreq0_msg,
-  output                       memreq0_val,
-  input                        memreq0_rdy,
+  output  [c_memreq_nbits-1:0] {Domain cur_sd} memreq0_msg,
+  output                       {Domain cur_sd} memreq0_val,
+  input                        {Domain cur_sd} memreq0_rdy,
 
-  input  [c_memresp_nbits-1:0] memresp0_msg,
-  input                        memresp0_val,
-  output                       memresp0_rdy,
+  input  [c_memresp_nbits-1:0] {Domain cur_sd} memresp0_msg,
+  input                        {Domain cur_sd} memresp0_val,
+  output                       {Domain cur_sd} memresp0_rdy,
 
-  output  [c_memreq_nbits-1:0] memreq1_msg,
-  output                       memreq1_val,
-  input                        memreq1_rdy,
+  output  [c_memreq_nbits-1:0] {Domain cur_sd} memreq1_msg,
+  output                       {Domain cur_sd} memreq1_val,
+  input                        {Domain cur_sd} memreq1_rdy,
 
-  input  [c_memresp_nbits-1:0] memresp1_msg,
-  input                        memresp1_val,
-  output                       memresp1_rdy,
+  input  [c_memresp_nbits-1:0] {Domain cur_sd} memresp1_msg,
+  input                        {Domain cur_sd} memresp1_val,
+  output                       {Domain cur_sd} memresp1_rdy,
 
-  output                       stats_en
+  output                       {D0} stats_en
 );
 
   //+++ gen-harness : begin insert ++++++++++++++++++++++++++++++++++++++
@@ -89,6 +90,13 @@ module plab5_mcore_ProcCacheNetAlt
 
   //+++ gen-harness : begin cut ++++++++++++++++++++++++++++++++++++++++++
 
+  // current security domain of the system
+  reg                          {L} cur_sd;
+  
+  always @ (posedge clk) begin
+      cur_sd <= ~cur_sd;
+  end
+  
   // short name for refill data size and network source size
 
   localparam rd = c_cacheline_nbits;
@@ -111,265 +119,822 @@ module plab5_mcore_ProcCacheNetAlt
 
   // declare network wires
 
-  wire [`VC_PORT_PICK_NBITS(mrq,p_num_cores)-1:0] dcache_net_req_in_msg;
-  wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] dcache_net_req_in_val;
-  wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] dcache_net_req_in_rdy;
+  wire [mrq-1:0] {D0} dcache_net_req_in_msg_0;
+  wire           {D0} dcache_net_req_in_val_0;
+  wire           {D0} dcache_net_req_in_rdy_0;
+  
+  wire [mrq-1:0] {D0} dcache_net_req_in_msg_1;
+  wire           {D0} dcache_net_req_in_val_1;
+  wire           {D0} dcache_net_req_in_rdy_1;
+  
+  wire [mrq-1:0] {D1} dcache_net_req_in_msg_2;
+  wire           {D1} dcache_net_req_in_val_2;
+  wire           {D1} dcache_net_req_in_rdy_2;
+  
+  wire [mrq-1:0] {D1} dcache_net_req_in_msg_3;
+  wire           {D1} dcache_net_req_in_val_3;
+  wire           {D1} dcache_net_req_in_rdy_3;
+  
+  wire [mrq-1:0] {D0} dcache_net_req_out_msg_0;
+  wire           {D0} dcache_net_req_out_val_0;
+  wire           {D0} dcache_net_req_out_rdy_0;
+  
+  wire [mrq-1:0] {D0} dcache_net_req_out_msg_1;
+  wire           {D0} dcache_net_req_out_val_1;
+  wire           {D0} dcache_net_req_out_rdy_1;
+  
+  wire [mrq-1:0] {D1} dcache_net_req_out_msg_2;
+  wire           {D1} dcache_net_req_out_val_2;
+  wire           {D1} dcache_net_req_out_rdy_2;
+  
+  wire [mrq-1:0] {D1} dcache_net_req_out_msg_3;
+  wire           {D1} dcache_net_req_out_val_3;
+  wire           {D1} dcache_net_req_out_rdy_3;
 
-  wire [`VC_PORT_PICK_NBITS(mrq,p_num_cores)-1:0] dcache_net_req_out_msg;
-  wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] dcache_net_req_out_val;
-  wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] dcache_net_req_out_rdy;
+  wire [mrs-1:0] {D0} dcache_net_resp_in_msg_0;
+  wire           {D0} dcache_net_resp_in_val_0;
+  wire           {D0} dcache_net_resp_in_rdy_0;
+  
+  wire [mrs-1:0] {D0} dcache_net_resp_in_msg_1;
+  wire           {D0} dcache_net_resp_in_val_1;
+  wire           {D0} dcache_net_resp_in_rdy_1;
+  
+  wire [mrs-1:0] {D1} dcache_net_resp_in_msg_2;
+  wire           {D1} dcache_net_resp_in_val_2;
+  wire           {D1} dcache_net_resp_in_rdy_2;
+  
+  wire [mrs-1:0] {D1} dcache_net_resp_in_msg_3;
+  wire           {D1} dcache_net_resp_in_val_3;
+  wire           {D1} dcache_net_resp_in_rdy_3;
+  
+  wire [mrs-1:0] {D0} dcache_net_resp_out_msg_0;
+  wire           {D0} dcache_net_resp_out_val_0;
+  wire           {D0} dcache_net_resp_out_rdy_0;
+  
+  wire [mrs-1:0] {D0} dcache_net_resp_out_msg_1;
+  wire           {D0} dcache_net_resp_out_val_1;
+  wire           {D0} dcache_net_resp_out_rdy_1;
+  
+  wire [mrs-1:0] {D1} dcache_net_resp_out_msg_2;
+  wire           {D1} dcache_net_resp_out_val_2;
+  wire           {D1} dcache_net_resp_out_rdy_2;
+  
+  wire [mrs-1:0] {D1} dcache_net_resp_out_msg_3;
+  wire           {D1} dcache_net_resp_out_val_3;
+  wire           {D1} dcache_net_resp_out_rdy_3;
+  
+  wire [mrq-1:0] {D0} dcache_refill_net_req_in_msg_0;
+  wire           {D0} dcache_refill_net_req_in_val_0;
+  wire           {D0} dcache_refill_net_req_in_rdy_0;
+  
+  wire [mrq-1:0] {D0} dcache_refill_net_req_in_msg_1;
+  wire           {D0} dcache_refill_net_req_in_val_1;
+  wire           {D0} dcache_refill_net_req_in_rdy_1;
+  
+  wire [mrq-1:0] {D1} dcache_refill_net_req_in_msg_2;
+  wire           {D1} dcache_refill_net_req_in_val_2;
+  wire           {D1} dcache_refill_net_req_in_rdy_2;
+  
+  wire [mrq-1:0] {D1} dcache_refill_net_req_in_msg_3;
+  wire           {D1} dcache_refill_net_req_in_val_3;
+  wire           {D1} dcache_refill_net_req_in_rdy_3;
+  
+  wire [mrq-1:0] {Domain cur_sd} dcache_refill_net_req_out_msg_0;
+  wire           {Domain cur_sd} dcache_refill_net_req_out_val_0;
+  wire           {Domain cur_sd} dcache_refill_net_req_out_rdy_0;
+  
+  wire [mrq-1:0] {Domain cur_sd} dcache_refill_net_req_out_msg_1;
+  wire           {Domain cur_sd} dcache_refill_net_req_out_val_1;
+  wire           {Domain cur_sd} dcache_refill_net_req_out_rdy_1;
+  
+  wire [mrq-1:0] {Domain cur_sd} dcache_refill_net_req_out_msg_2;
+  wire           {Domain cur_sd} dcache_refill_net_req_out_val_2;
+  wire           {Domain cur_sd} dcache_refill_net_req_out_rdy_2;
+  
+  wire [mrq-1:0] {Domain cur_sd} dcache_refill_net_req_out_msg_3;
+  wire           {Domain cur_sd} dcache_refill_net_req_out_val_3;
+  wire           {Domain cur_sd} dcache_refill_net_req_out_rdy_3;
 
-  wire [`VC_PORT_PICK_NBITS(mrs,p_num_cores)-1:0] dcache_net_resp_in_msg;
-  wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] dcache_net_resp_in_val;
-  wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] dcache_net_resp_in_rdy;
+  wire [mrs-1:0] {Domain cur_sd} dcache_refill_net_resp_in_msg_0;
+  wire           {Domain cur_sd} dcache_refill_net_resp_in_val_0;
+  wire           {Domain cur_sd} dcache_refill_net_resp_in_rdy_0;
+  
+  wire [mrs-1:0] {Domain cur_sd} dcache_refill_net_resp_in_msg_1;
+  wire           {Domain cur_sd} dcache_refill_net_resp_in_val_1;
+  wire           {Domain cur_sd} dcache_refill_net_resp_in_rdy_1;
+  
+  wire [mrs-1:0] {Domain cur_sd} dcache_refill_net_resp_in_msg_2;
+  wire           {Domain cur_sd} dcache_refill_net_resp_in_val_2;
+  wire           {Domain cur_sd} dcache_refill_net_resp_in_rdy_2;
+  
+  wire [mrs-1:0] {Domain cur_sd} dcache_refill_net_resp_in_msg_3;
+  wire           {Domain cur_sd} dcache_refill_net_resp_in_val_3;
+  wire           {Domain cur_sd} dcache_refill_net_resp_in_rdy_3;
+  
+  wire [mrs-1:0] {D0} dcache_refill_net_resp_out_msg_0;
+  wire           {D0} dcache_refill_net_resp_out_val_0;
+  wire           {D0} dcache_refill_net_resp_out_rdy_0;
+  
+  wire [mrs-1:0] {D0} dcache_refill_net_resp_out_msg_1;
+  wire           {D0} dcache_refill_net_resp_out_val_1;
+  wire           {D0} dcache_refill_net_resp_out_rdy_1;
+  
+  wire [mrs-1:0] {D1} dcache_refill_net_resp_out_msg_2;
+  wire           {D1} dcache_refill_net_resp_out_val_2;
+  wire           {D1} dcache_refill_net_resp_out_rdy_2;
+  
+  wire [mrs-1:0] {D1} dcache_refill_net_resp_out_msg_3;
+  wire           {D1} dcache_refill_net_resp_out_val_3;
+  wire           {D1} dcache_refill_net_resp_out_rdy_3;
 
-  wire [`VC_PORT_PICK_NBITS(mrs,p_num_cores)-1:0] dcache_net_resp_out_msg;
-  wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] dcache_net_resp_out_val;
-  wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] dcache_net_resp_out_rdy;
+  wire [mrq-1:0] {D0} icache_refill_net_req_in_msg_0;
+  wire           {D0} icache_refill_net_req_in_val_0;
+  wire           {D0} icache_refill_net_req_in_rdy_0;
+  
+  wire [mrq-1:0] {D0} icache_refill_net_req_in_msg_1;
+  wire           {D0} icache_refill_net_req_in_val_1;
+  wire           {D0} icache_refill_net_req_in_rdy_1;
+  
+  wire [mrq-1:0] {D1} icache_refill_net_req_in_msg_2;
+  wire           {D1} icache_refill_net_req_in_val_2;
+  wire           {D1} icache_refill_net_req_in_rdy_2;
+  
+  wire [mrq-1:0] {D1} icache_refill_net_req_in_msg_3;
+  wire           {D1} icache_refill_net_req_in_val_3;
+  wire           {D1} icache_refill_net_req_in_rdy_3;
+  
+  wire [mrq-1:0] {Domain cur_sd} icache_refill_net_req_out_msg_0;
+  wire           {Domain cur_sd} icache_refill_net_req_out_val_0;
+  wire           {Domain cur_sd} icache_refill_net_req_out_rdy_0;
+  
+  wire [mrq-1:0] {Domain cur_sd} icache_refill_net_req_out_msg_1;
+  wire           {Domain cur_sd} icache_refill_net_req_out_val_1;
+  wire           {Domain cur_sd} icache_refill_net_req_out_rdy_1;
+  
+  wire [mrq-1:0] {Domain cur_sd} icache_refill_net_req_out_msg_2;
+  wire           {Domain cur_sd} icache_refill_net_req_out_val_2;
+  wire           {Domain cur_sd} icache_refill_net_req_out_rdy_2;
+  
+  wire [mrq-1:0] {Domain cur_sd} icache_refill_net_req_out_msg_3;
+  wire           {Domain cur_sd} icache_refill_net_req_out_val_3;
+  wire           {Domain cur_sd} icache_refill_net_req_out_rdy_3;
 
-  wire [`VC_PORT_PICK_NBITS(mrq,p_num_cores)-1:0] dcache_refill_net_req_in_msg;
-  wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] dcache_refill_net_req_in_val;
-  wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] dcache_refill_net_req_in_rdy;
-
-  wire [`VC_PORT_PICK_NBITS(mrq,p_num_cores)-1:0] dcache_refill_net_req_out_msg;
-  wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] dcache_refill_net_req_out_val;
-  wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] dcache_refill_net_req_out_rdy;
-
-  wire [`VC_PORT_PICK_NBITS(mrs,p_num_cores)-1:0] dcache_refill_net_resp_in_msg;
-  wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] dcache_refill_net_resp_in_val;
-  wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] dcache_refill_net_resp_in_rdy;
-
-  wire [`VC_PORT_PICK_NBITS(mrs,p_num_cores)-1:0] dcache_refill_net_resp_out_msg;
-  wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] dcache_refill_net_resp_out_val;
-  wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] dcache_refill_net_resp_out_rdy;
-
-  wire [`VC_PORT_PICK_NBITS(mrq,p_num_cores)-1:0] icache_refill_net_req_in_msg;
-  wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] icache_refill_net_req_in_val;
-  wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] icache_refill_net_req_in_rdy;
-
-  wire [`VC_PORT_PICK_NBITS(mrq,p_num_cores)-1:0] icache_refill_net_req_out_msg;
-  wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] icache_refill_net_req_out_val;
-  wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] icache_refill_net_req_out_rdy;
-
-  wire [`VC_PORT_PICK_NBITS(mrs,p_num_cores)-1:0] icache_refill_net_resp_in_msg;
-  wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] icache_refill_net_resp_in_val;
-  wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] icache_refill_net_resp_in_rdy;
-
-  wire [`VC_PORT_PICK_NBITS(mrs,p_num_cores)-1:0] icache_refill_net_resp_out_msg;
-  wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] icache_refill_net_resp_out_val;
-  wire [`VC_PORT_PICK_NBITS(1  ,p_num_cores)-1:0] icache_refill_net_resp_out_rdy;
-
-  // declare wires for the manager interface
-
-  wire [`VC_PORT_PICK_NBITS(32,p_num_cores)-1:0]  from_mngr_msg;
-  wire [`VC_PORT_PICK_NBITS(1 ,p_num_cores)-1:0]  from_mngr_val;
-  wire [`VC_PORT_PICK_NBITS(1 ,p_num_cores)-1:0]  from_mngr_rdy;
-
-  wire [`VC_PORT_PICK_NBITS(32,p_num_cores)-1:0]  to_mngr_msg;
-  wire [`VC_PORT_PICK_NBITS(1 ,p_num_cores)-1:0]  to_mngr_val;
-  wire [`VC_PORT_PICK_NBITS(1 ,p_num_cores)-1:0]  to_mngr_rdy;
+  wire [mrs-1:0] {Domain cur_sd} icache_refill_net_resp_in_msg_0;
+  wire           {Domain cur_sd} icache_refill_net_resp_in_val_0;
+  wire           {Domain cur_sd} icache_refill_net_resp_in_rdy_0;
+  
+  wire [mrs-1:0] {Domain cur_sd} icache_refill_net_resp_in_msg_1;
+  wire           {Domain cur_sd} icache_refill_net_resp_in_val_1;
+  wire           {Domain cur_sd} icache_refill_net_resp_in_rdy_1;
+  
+  wire [mrs-1:0] {Domain cur_sd} icache_refill_net_resp_in_msg_2;
+  wire           {Domain cur_sd} icache_refill_net_resp_in_val_2;
+  wire           {Domain cur_sd} icache_refill_net_resp_in_rdy_2;
+  
+  wire [mrs-1:0] {Domain cur_sd} icache_refill_net_resp_in_msg_3;
+  wire           {Domain cur_sd} icache_refill_net_resp_in_val_3;
+  wire           {Domain cur_sd} icache_refill_net_resp_in_rdy_3;
+  
+  wire [mrs-1:0] {D0} icache_refill_net_resp_out_msg_0;
+  wire           {D0} icache_refill_net_resp_out_val_0;
+  wire           {D0} icache_refill_net_resp_out_rdy_0;
+  
+  wire [mrs-1:0] {D0} icache_refill_net_resp_out_msg_1;
+  wire           {D0} icache_refill_net_resp_out_val_1;
+  wire           {D0} icache_refill_net_resp_out_rdy_1;
+  
+  wire [mrs-1:0] {D1} icache_refill_net_resp_out_msg_2;
+  wire           {D1} icache_refill_net_resp_out_val_2;
+  wire           {D1} icache_refill_net_resp_out_rdy_2;
+  
+  wire [mrs-1:0] {D1} icache_refill_net_resp_out_msg_3;
+  wire           {D1} icache_refill_net_resp_out_val_3;
+  wire           {D1} icache_refill_net_resp_out_rdy_3;
 
   // define proc0 name
 
   `define PLAB5_MCORE_PROC0 CORES_CACHES[0].PROC.proc
 
-  genvar i;
+  // =========================  Processor 0 =========================================
+  
+  wire [prq-1:0] {D0} icache_req_msg_0;
+  wire           {D0} icache_req_val_0;
+  wire           {D0} icache_req_rdy_0;
 
-  generate
-  for ( i = 0; i < p_num_cores; i = i + 1 ) begin: CORES_CACHES
+  wire [prs-1:0] {D0} icache_resp_msg_0;
+  wire           {D0} icache_resp_val_0;
+  wire           {D0} icache_resp_rdy_0;
+  
+  wire [prq-1:0] {D0} dcache_req_msg_0;
+  wire           {D0} dcache_req_val_0;
+  wire           {D0} dcache_req_rdy_0;
 
-    wire [prq-1:0] icache_req_msg;
-    wire           icache_req_val;
-    wire           icache_req_rdy;
+  wire [prs-1:0] {D0} dcache_resp_msg_0;
+  wire           {D0} dcache_resp_val_0;
+  wire           {D0} dcache_resp_rdy_0;
+  
+  plab2_proc_PipelinedProcBypass
+  #(
+    .p_num_cores  (p_num_cores),
+    .p_core_id    (0)
+  )
+  proc_0
+  (
+    .clk           (clk),
+    .reset         (reset),
 
-    wire [prs-1:0] icache_resp_msg;
-    wire           icache_resp_val;
-    wire           icache_resp_rdy;
-    
-    wire [prq-1:0] dcache_req_msg;
-    wire           dcache_req_val;
-    wire           dcache_req_rdy;
+    .imemreq_msg   (icache_req_msg_0),
+    .imemreq_val   (icache_req_val_0),
+    .imemreq_rdy   (icache_req_rdy_0),
 
-    wire [prs-1:0] dcache_resp_msg;
-    wire           dcache_resp_val;
-    wire           dcache_resp_rdy;
+    .imemresp_msg  (icache_resp_msg_0),
+    .imemresp_val  (icache_resp_val_0),
+    .imemresp_rdy  (icache_resp_rdy_0),
 
-    // processor
+    .dmemreq_msg   (dcache_req_msg_0),
+    .dmemreq_val   (dcache_req_val_0),
+    .dmemreq_rdy   (dcache_req_rdy_0),
+                   
+    .dmemresp_msg  (dcache_resp_msg_0),
+    .dmemresp_val  (dcache_resp_val_0),
+    .dmemresp_rdy  (dcache_resp_rdy_0),
 
-    if ( i == 0 ) begin: PROC
-      // proc0 uses the manager interface to communicate with test/sim harness
+    .from_mngr_msg (proc0_from_mngr_msg),
+    .from_mngr_val (proc0_from_mngr_val),
+    .from_mngr_rdy (proc0_from_mngr_rdy),
 
-      plab2_proc_PipelinedProcBypass
-      #(
-        .p_num_cores  (p_num_cores),
-        .p_core_id    (i)
-      )
-      proc
-      (
-        .clk           (clk),
-        .reset         (reset),
+    .to_mngr_msg   (proc0_to_mngr_msg),
+    .to_mngr_val   (proc0_to_mngr_val),
+    .to_mngr_rdy   (proc0_to_mngr_rdy),
 
-        .imemreq_msg   (icache_req_msg),
-        .imemreq_val   (icache_req_val),
-        .imemreq_rdy   (icache_req_rdy),
+    .stats_en      (stats_en),
+    .sd            (0)
+  );
+  
+  // instruction cache
 
-        .imemresp_msg  (icache_resp_msg),
-        .imemresp_val  (icache_resp_val),
-        .imemresp_rdy  (icache_resp_rdy),
+  plab3_mem_BlockingCacheAlt
+  #(
+    .p_mem_nbytes         (p_icache_nbytes),
+    .p_num_banks          (1),
+    .p_opaque_nbits       (o)
+  )
+  icache_0
+  (
+    .clk           (clk),
+    .reset         (reset),
 
-        .dmemreq_msg   (dcache_req_msg),
-        .dmemreq_val   (dcache_req_val),
-        .dmemreq_rdy   (dcache_req_rdy),
-                       
-        .dmemresp_msg  (dcache_resp_msg),
-        .dmemresp_val  (dcache_resp_val),
-        .dmemresp_rdy  (dcache_resp_rdy),
+    .cachereq_msg  (icache_req_msg_0),
+    .cachereq_val  (icache_req_val_0),
+    .cachereq_rdy  (icache_req_rdy_0),
 
-        .from_mngr_msg (proc0_from_mngr_msg),
-        .from_mngr_val (proc0_from_mngr_val),
-        .from_mngr_rdy (proc0_from_mngr_rdy),
+    .cacheresp_msg (icache_resp_msg_0),
+    .cacheresp_val (icache_resp_val_0),
+    .cacheresp_rdy (icache_resp_rdy_0),
 
-        .to_mngr_msg   (proc0_to_mngr_msg),
-        .to_mngr_val   (proc0_to_mngr_val),
-        .to_mngr_rdy   (proc0_to_mngr_rdy),
+    .memreq_msg    (icache_refill_net_req_in_msg_0),
+    .memreq_val    (icache_refill_net_req_in_val_0),
+    .memreq_rdy    (icache_refill_net_req_in_rdy_0),
 
-        .stats_en      (stats_en)
-      );
-    end else begin: PROC
-      // rest of the processors don't use the manager interface
+    .memresp_msg   (icache_refill_net_resp_out_msg_0),
+    .memresp_val   (icache_refill_net_resp_out_val_0),
+    .memresp_rdy   (icache_refill_net_resp_out_rdy_0),
+    .sd            (0)
+  );
 
-      plab2_proc_PipelinedProcBypass
-      #(
-        .p_num_cores  (p_num_cores),
-        .p_core_id    (i)
-      )
-      proc
-      (
-        .clk           (clk),
-        .reset         (reset),
+  // $L1 data cache
 
-        .imemreq_msg   (icache_req_msg),
-        .imemreq_val   (icache_req_val),
-        .imemreq_rdy   (icache_req_rdy),
+  plab3_mem_BlockingCacheAlt
+  #(
+    .p_mem_nbytes         (p_dcache_nbytes),
+    .p_num_banks          (1),
+    .p_opaque_nbits       (o)
+  )
+  l1_dcache_0
+  (
+    .clk           (clk),
+    .reset         (reset),
 
-        .imemresp_msg  (icache_resp_msg),
-        .imemresp_val  (icache_resp_val),
-        .imemresp_rdy  (icache_resp_rdy),
-        
-        .dmemreq_msg   (dcache_req_msg),
-        .dmemreq_val   (dcache_req_val),
-        .dmemreq_rdy   (dcache_req_rdy),
-                       
-        .dmemresp_msg  (dcache_resp_msg),
-        .dmemresp_val  (dcache_resp_val),
-        .dmemresp_rdy  (dcache_resp_rdy),
+    .cachereq_msg  (dcache_req_msg_0),
+    .cachereq_val  (dcache_req_val_0),
+    .cachereq_rdy  (dcache_req_rdy_0),
 
-        .from_mngr_msg (0),
-        .from_mngr_val (1'b0),
+    .cacheresp_msg (dcache_resp_msg_0),
+    .cacheresp_val (dcache_resp_val_0),
+    .cacheresp_rdy (dcache_resp_rdy_0),
 
-        .to_mngr_rdy   (1'b0)
+    .memreq_msg    (dcache_net_req_in_msg_0),
+    .memreq_val    (dcache_net_req_in_val_0),
+    .memreq_rdy    (dcache_net_req_in_rdy_0),
 
-      );
-    end
+    .memresp_msg   (dcache_net_resp_out_msg_0),
+    .memresp_val   (dcache_net_resp_out_val_0),
+    .memresp_rdy   (dcache_net_resp_out_rdy_0),
+    .sd            (0)
 
-    // instruction cache
+  );
 
-    plab3_mem_BlockingCacheAlt
-    #(
-      .p_mem_nbytes         (p_icache_nbytes),
-      .p_num_banks          (1),
-      .p_opaque_nbits       (o)
-    )
-    icache
-    (
-      .clk           (clk),
-      .reset         (reset),
+  // $L2 data cache
+  plab3_mem_BlockingCacheL2
+  #(
+    .p_mem_nbytes         (p_dcache_nbytes),
+    .p_num_banks          (p_num_cores),
+    .p_opaque_nbits       (o)
+  )
+  l2_dcache_0
+  (
+    .clk           (clk),
+    .reset         (reset),
 
-      .cachereq_msg  (icache_req_msg),
-      .cachereq_val  (icache_req_val),
-      .cachereq_rdy  (icache_req_rdy),
+    .cachereq_msg  (dcache_net_req_out_msg_0),
+    .cachereq_val  (dcache_net_req_out_val_0),
+    .cachereq_rdy  (dcache_net_req_out_rdy_0),
 
-      .cacheresp_msg (icache_resp_msg),
-      .cacheresp_val (icache_resp_val),
-      .cacheresp_rdy (icache_resp_rdy),
+    .cacheresp_msg (dcache_net_resp_in_msg_0),
+    .cacheresp_val (dcache_net_resp_in_val_0),
+    .cacheresp_rdy (dcache_net_resp_in_rdy_0),
 
-      .memreq_msg    (icache_refill_net_req_in_msg[`VC_PORT_PICK_FIELD(mrq,i)]),
-      .memreq_val    (icache_refill_net_req_in_val[`VC_PORT_PICK_FIELD(1,  i)]),
-      .memreq_rdy    (icache_refill_net_req_in_rdy[`VC_PORT_PICK_FIELD(1,  i)]),
+    .memreq_msg    (dcache_refill_net_req_in_msg_0),
+    .memreq_val    (dcache_refill_net_req_in_val_0),
+    .memreq_rdy    (dcache_refill_net_req_in_rdy_0),
 
-      .memresp_msg   (icache_refill_net_resp_out_msg[`VC_PORT_PICK_FIELD(mrs,i)]),
-      .memresp_val   (icache_refill_net_resp_out_val[`VC_PORT_PICK_FIELD(1,  i)]),
-      .memresp_rdy   (icache_refill_net_resp_out_rdy[`VC_PORT_PICK_FIELD(1,  i)])
+    .memresp_msg   (dcache_refill_net_resp_out_msg_0),
+    .memresp_val   (dcache_refill_net_resp_out_val_0),
+    .memresp_rdy   (dcache_refill_net_resp_out_rdy_0),
+    .sd            (0)
 
-    );
+  );
 
-    // $L1 data cache
+  // =========================  Processor 1 =========================================
 
-    plab3_mem_BlockingCacheAlt
-    #(
-      .p_mem_nbytes         (p_dcache_nbytes),
-      .p_num_banks          (1),
-      .p_opaque_nbits       (o)
-    )
-    l1_dcache
-    (
-      .clk           (clk),
-      .reset         (reset),
+  wire [prq-1:0] {D0} icache_req_msg_1;
+  wire           {D0} icache_req_val_1;
+  wire           {D0} icache_req_rdy_1;
 
-      .cachereq_msg  (dcache_req_msg),
-      .cachereq_val  (dcache_req_val),
-      .cachereq_rdy  (dcache_req_rdy),
-                      
-      .cacheresp_msg (dcache_resp_msg),
-      .cacheresp_val (dcache_resp_val),
-      .cacheresp_rdy (dcache_resp_rdy),
+  wire [prs-1:0] {D0} icache_resp_msg_1;
+  wire           {D0} icache_resp_val_1;
+  wire           {D0} icache_resp_rdy_1;
 
-      .memreq_msg    (dcache_net_req_in_msg[`VC_PORT_PICK_FIELD(mrq,i)]),
-      .memreq_val    (dcache_net_req_in_val[`VC_PORT_PICK_FIELD(1,  i)]),
-      .memreq_rdy    (dcache_net_req_in_rdy[`VC_PORT_PICK_FIELD(1,  i)]),
+  wire [prq-1:0] {D0} dcache_req_msg_1;
+  wire           {D0} dcache_req_val_1;
+  wire           {D0} dcache_req_rdy_1;
 
-      .memresp_msg   (dcache_net_resp_out_msg[`VC_PORT_PICK_FIELD(mrs,i)]),
-      .memresp_val   (dcache_net_resp_out_val[`VC_PORT_PICK_FIELD(1,  i)]),
-      .memresp_rdy   (dcache_net_resp_out_rdy[`VC_PORT_PICK_FIELD(1,  i)])
+  wire [prs-1:0] {D0} dcache_resp_msg_1;
+  wire           {D0} dcache_resp_val_1;
+  wire           {D0} dcache_resp_rdy_1;
 
-    );
-    
-    // $L2 data cache
-    
-    plab3_mem_BlockingCacheL2
-    #(
-      .p_mem_nbytes         (p_dcache_nbytes),
-      .p_num_banks          (p_num_cores),
-      .p_opaque_nbits       (o)
-    )
-    l2_dcache
-    (
-      .clk           (clk),
-      .reset         (reset),
+  plab2_proc_PipelinedProcBypass
+  #(
+    .p_num_cores  (p_num_cores),
+    .p_core_id    (1)
+  )
+  proc_1
+  (
+    .clk           (clk),
+    .reset         (reset),
 
-      .cachereq_msg  (dcache_net_req_out_msg[`VC_PORT_PICK_FIELD(mrq,i)]),
-      .cachereq_val  (dcache_net_req_out_val[`VC_PORT_PICK_FIELD(1,  i)]),
-      .cachereq_rdy  (dcache_net_req_out_rdy[`VC_PORT_PICK_FIELD(1,  i)]),
+    .imemreq_msg   (icache_req_msg_1),
+    .imemreq_val   (icache_req_val_1),
+    .imemreq_rdy   (icache_req_rdy_1),
 
-      .cacheresp_msg (dcache_net_resp_in_msg[`VC_PORT_PICK_FIELD(mrs,i)]),
-      .cacheresp_val (dcache_net_resp_in_val[`VC_PORT_PICK_FIELD(1,  i)]),
-      .cacheresp_rdy (dcache_net_resp_in_rdy[`VC_PORT_PICK_FIELD(1,  i)]),
+    .imemresp_msg  (icache_resp_msg_1),
+    .imemresp_val  (icache_resp_val_1),
+    .imemresp_rdy  (icache_resp_rdy_1),
 
-      .memreq_msg    (dcache_refill_net_req_in_msg[`VC_PORT_PICK_FIELD(mrq,i)]),
-      .memreq_val    (dcache_refill_net_req_in_val[`VC_PORT_PICK_FIELD(1,  i)]),
-      .memreq_rdy    (dcache_refill_net_req_in_rdy[`VC_PORT_PICK_FIELD(1,  i)]),
+    .dmemreq_msg   (dcache_req_msg_1),
+    .dmemreq_val   (dcache_req_val_1),
+    .dmemreq_rdy   (dcache_req_rdy_1),
 
-      .memresp_msg   (dcache_refill_net_resp_out_msg[`VC_PORT_PICK_FIELD(mrs,i)]),
-      .memresp_val   (dcache_refill_net_resp_out_val[`VC_PORT_PICK_FIELD(1,  i)]),
-      .memresp_rdy   (dcache_refill_net_resp_out_rdy[`VC_PORT_PICK_FIELD(1,  i)])
+    .dmemresp_msg  (dcache_resp_msg_1),
+    .dmemresp_val  (dcache_resp_val_1),
+    .dmemresp_rdy  (dcache_resp_rdy_1),
 
-    );
+    .from_mngr_msg (0),
+    .from_mngr_val (1'b0),
 
-  end
-  endgenerate
+    .to_mngr_rdy   (1'b0),
+    .sd            (0)
+  );
 
-  // dcache net
+  // instruction cache
 
+  plab3_mem_BlockingCacheAlt
+  #(
+    .p_mem_nbytes         (p_icache_nbytes),
+    .p_num_banks          (1),
+    .p_opaque_nbits       (o)
+  )
+  icache_1
+  (
+    .clk           (clk),
+    .reset         (reset),
+
+    .cachereq_msg  (icache_req_msg_1),
+    .cachereq_val  (icache_req_val_1),
+    .cachereq_rdy  (icache_req_rdy_1),
+
+    .cacheresp_msg (icache_resp_msg_1),
+    .cacheresp_val (icache_resp_val_1),
+    .cacheresp_rdy (icache_resp_rdy_1),
+
+    .memreq_msg    (icache_refill_net_req_in_msg_1),
+    .memreq_val    (icache_refill_net_req_in_val_1),
+    .memreq_rdy    (icache_refill_net_req_in_rdy_1),
+
+    .memresp_msg   (icache_refill_net_resp_out_msg_1),
+    .memresp_val   (icache_refill_net_resp_out_val_1),
+    .memresp_rdy   (icache_refill_net_resp_out_rdy_1),
+    .sd            (0)
+  );
+
+  // $L1 data cache
+
+  plab3_mem_BlockingCacheAlt
+  #(
+    .p_mem_nbytes         (p_dcache_nbytes),
+    .p_num_banks          (1),
+    .p_opaque_nbits       (o)
+  )
+  l1_dcache_1
+  (
+    .clk           (clk),
+    .reset         (reset),
+
+    .cachereq_msg  (dcache_req_msg_1),
+    .cachereq_val  (dcache_req_val_1),
+    .cachereq_rdy  (dcache_req_rdy_1),
+
+    .cacheresp_msg (dcache_resp_msg_1),
+    .cacheresp_val (dcache_resp_val_1),
+    .cacheresp_rdy (dcache_resp_rdy_1),
+
+    .memreq_msg    (dcache_net_req_in_msg_1),
+    .memreq_val    (dcache_net_req_in_val_1),
+    .memreq_rdy    (dcache_net_req_in_rdy_1),
+
+    .memresp_msg   (dcache_net_resp_out_msg_1),
+    .memresp_val   (dcache_net_resp_out_val_1),
+    .memresp_rdy   (dcache_net_resp_out_rdy_1),
+    .sd            (0)
+
+  );
+
+  // $L2 data cache
+  plab3_mem_BlockingCacheL2
+  #(
+    .p_mem_nbytes         (p_dcache_nbytes),
+    .p_num_banks          (p_num_cores),
+    .p_opaque_nbits       (o)
+  )
+  l2_dcache_1
+  (
+    .clk           (clk),
+    .reset         (reset),
+
+    .cachereq_msg  (dcache_net_req_out_msg_1),
+    .cachereq_val  (dcache_net_req_out_val_1),
+    .cachereq_rdy  (dcache_net_req_out_rdy_1),
+
+    .cacheresp_msg (dcache_net_resp_in_msg_1),
+    .cacheresp_val (dcache_net_resp_in_val_1),
+    .cacheresp_rdy (dcache_net_resp_in_rdy_1),
+
+    .memreq_msg    (dcache_refill_net_req_in_msg_1),
+    .memreq_val    (dcache_refill_net_req_in_val_1),
+    .memreq_rdy    (dcache_refill_net_req_in_rdy_1),
+
+    .memresp_msg   (dcache_refill_net_resp_out_msg_1),
+    .memresp_val   (dcache_refill_net_resp_out_val_1),
+    .memresp_rdy   (dcache_refill_net_resp_out_rdy_1),
+    .sd            (0)
+
+  );
+
+  // =========================  Processor 2 =========================================
+
+  wire [prq-1:0] {D1} icache_req_msg_2;
+  wire           {D1} icache_req_val_2;
+  wire           {D1} icache_req_rdy_2;
+
+  wire [prs-1:0] {D1} icache_resp_msg_2;
+  wire           {D1} icache_resp_val_2;
+  wire           {D1} icache_resp_rdy_2;
+
+  wire [prq-1:0] {D1} dcache_req_msg_2;
+  wire           {D1} dcache_req_val_2;
+  wire           {D1} dcache_req_rdy_2;
+
+  wire [prs-1:0] {D1} dcache_resp_msg_2;
+  wire           {D1} dcache_resp_val_2;
+  wire           {D1} dcache_resp_rdy_2;
+
+  plab2_proc_PipelinedProcBypass
+  #(
+    .p_num_cores  (p_num_cores),
+    .p_core_id    (2)
+  )
+  proc_2
+  (
+    .clk           (clk),
+    .reset         (reset),
+
+    .imemreq_msg   (icache_req_msg_2),
+    .imemreq_val   (icache_req_val_2),
+    .imemreq_rdy   (icache_req_rdy_2),
+
+    .imemresp_msg  (icache_resp_msg_2),
+    .imemresp_val  (icache_resp_val_2),
+    .imemresp_rdy  (icache_resp_rdy_2),
+
+    .dmemreq_msg   (dcache_req_msg_2),
+    .dmemreq_val   (dcache_req_val_2),
+    .dmemreq_rdy   (dcache_req_rdy_2),
+
+    .dmemresp_msg  (dcache_resp_msg_2),
+    .dmemresp_val  (dcache_resp_val_2),
+    .dmemresp_rdy  (dcache_resp_rdy_2),
+
+    .from_mngr_msg (0),
+    .from_mngr_val (1'b0),
+
+    .to_mngr_rdy   (1'b0),
+    .sd            (1)
+  );
+
+  // instruction cache
+
+  plab3_mem_BlockingCacheAlt
+  #(
+    .p_mem_nbytes         (p_icache_nbytes),
+    .p_num_banks          (1),
+    .p_opaque_nbits       (o)
+  )
+  icache_2
+  (
+    .clk           (clk),
+    .reset         (reset),
+
+    .cachereq_msg  (icache_req_msg_2),
+    .cachereq_val  (icache_req_val_2),
+    .cachereq_rdy  (icache_req_rdy_2),
+
+    .cacheresp_msg (icache_resp_msg_2),
+    .cacheresp_val (icache_resp_val_2),
+    .cacheresp_rdy (icache_resp_rdy_2),
+
+    .memreq_msg    (icache_refill_net_req_in_msg_2),
+    .memreq_val    (icache_refill_net_req_in_val_2),
+    .memreq_rdy    (icache_refill_net_req_in_rdy_2),
+
+    .memresp_msg   (icache_refill_net_resp_out_msg_2),
+    .memresp_val   (icache_refill_net_resp_out_val_2),
+    .memresp_rdy   (icache_refill_net_resp_out_rdy_2),
+    .sd            (1)
+  );
+
+  // $L1 data cache
+
+  plab3_mem_BlockingCacheAlt
+  #(
+    .p_mem_nbytes         (p_dcache_nbytes),
+    .p_num_banks          (1),
+    .p_opaque_nbits       (o)
+  )
+  l1_dcache_2
+  (
+    .clk           (clk),
+    .reset         (reset),
+
+    .cachereq_msg  (dcache_req_msg_2),
+    .cachereq_val  (dcache_req_val_2),
+    .cachereq_rdy  (dcache_req_rdy_2),
+
+    .cacheresp_msg (dcache_resp_msg_2),
+    .cacheresp_val (dcache_resp_val_2),
+    .cacheresp_rdy (dcache_resp_rdy_2),
+
+    .memreq_msg    (dcache_net_req_in_msg_2),
+    .memreq_val    (dcache_net_req_in_val_2),
+    .memreq_rdy    (dcache_net_req_in_rdy_2),
+
+    .memresp_msg   (dcache_net_resp_out_msg_2),
+    .memresp_val   (dcache_net_resp_out_val_2),
+    .memresp_rdy   (dcache_net_resp_out_rdy_2),
+    .sd            (1)
+
+  );
+
+  // $L2 data cache
+  plab3_mem_BlockingCacheL2
+  #(
+    .p_mem_nbytes         (p_dcache_nbytes),
+    .p_num_banks          (p_num_cores),
+    .p_opaque_nbits       (o)
+  )
+  l2_dcache_2
+  (
+    .clk           (clk),
+    .reset         (reset),
+
+    .cachereq_msg  (dcache_net_req_out_msg_2),
+    .cachereq_val  (dcache_net_req_out_val_2),
+    .cachereq_rdy  (dcache_net_req_out_rdy_2),
+
+    .cacheresp_msg (dcache_net_resp_in_msg_2),
+    .cacheresp_val (dcache_net_resp_in_val_2),
+    .cacheresp_rdy (dcache_net_resp_in_rdy_2),
+
+    .memreq_msg    (dcache_refill_net_req_in_msg_2),
+    .memreq_val    (dcache_refill_net_req_in_val_2),
+    .memreq_rdy    (dcache_refill_net_req_in_rdy_2),
+
+    .memresp_msg   (dcache_refill_net_resp_out_msg_2),
+    .memresp_val   (dcache_refill_net_resp_out_val_2),
+    .memresp_rdy   (dcache_refill_net_resp_out_rdy_2),
+    .sd            (1)
+
+  );
+
+  // =========================  Processor 3 =========================================
+
+  wire [prq-1:0] {D1} icache_req_msg_3;
+  wire           {D1} icache_req_val_3;
+  wire           {D1} icache_req_rdy_3;
+
+  wire [prs-1:0] {D1} icache_resp_msg_3;
+  wire           {D1} icache_resp_val_3;
+  wire           {D1} icache_resp_rdy_3;
+
+  wire [prq-1:0] {D1} dcache_req_msg_3;
+  wire           {D1} dcache_req_val_3;
+  wire           {D1} dcache_req_rdy_3;
+
+  wire [prs-1:0] {D1} dcache_resp_msg_3;
+  wire           {D1} dcache_resp_val_3;
+  wire           {D1} dcache_resp_rdy_3;
+
+  plab2_proc_PipelinedProcBypass
+  #(
+    .p_num_cores  (p_num_cores),
+    .p_core_id    (3)
+  )
+  proc_3
+  (
+    .clk           (clk),
+    .reset         (reset),
+
+    .imemreq_msg   (icache_req_msg_3),
+    .imemreq_val   (icache_req_val_3),
+    .imemreq_rdy   (icache_req_rdy_3),
+
+    .imemresp_msg  (icache_resp_msg_3),
+    .imemresp_val  (icache_resp_val_3),
+    .imemresp_rdy  (icache_resp_rdy_3),
+
+    .dmemreq_msg   (dcache_req_msg_3),
+    .dmemreq_val   (dcache_req_val_3),
+    .dmemreq_rdy   (dcache_req_rdy_3),
+
+    .dmemresp_msg  (dcache_resp_msg_3),
+    .dmemresp_val  (dcache_resp_val_3),
+    .dmemresp_rdy  (dcache_resp_rdy_3),
+
+    .from_mngr_msg (0),
+    .from_mngr_val (1'b0),
+
+    .to_mngr_rdy   (1'b0),
+    .sd            (1)
+  );
+
+  // instruction cache
+
+  plab3_mem_BlockingCacheAlt
+  #(
+    .p_mem_nbytes         (p_icache_nbytes),
+    .p_num_banks          (1),
+    .p_opaque_nbits       (o)
+  )
+  icache_3
+  (
+    .clk           (clk),
+    .reset         (reset),
+
+    .cachereq_msg  (icache_req_msg_3),
+    .cachereq_val  (icache_req_val_3),
+    .cachereq_rdy  (icache_req_rdy_3),
+
+    .cacheresp_msg (icache_resp_msg_3),
+    .cacheresp_val (icache_resp_val_3),
+    .cacheresp_rdy (icache_resp_rdy_3),
+
+    .memreq_msg    (icache_refill_net_req_in_msg_3),
+    .memreq_val    (icache_refill_net_req_in_val_3),
+    .memreq_rdy    (icache_refill_net_req_in_rdy_3),
+
+    .memresp_msg   (icache_refill_net_resp_out_msg_3),
+    .memresp_val   (icache_refill_net_resp_out_val_3),
+    .memresp_rdy   (icache_refill_net_resp_out_rdy_3),
+    .sd            (1)
+  );
+
+  // $L1 data cache
+
+  plab3_mem_BlockingCacheAlt
+  #(
+    .p_mem_nbytes         (p_dcache_nbytes),
+    .p_num_banks          (1),
+    .p_opaque_nbits       (o)
+  )
+  l1_dcache_3
+  (
+    .clk           (clk),
+    .reset         (reset),
+
+    .cachereq_msg  (dcache_req_msg_3),
+    .cachereq_val  (dcache_req_val_3),
+    .cachereq_rdy  (dcache_req_rdy_3),
+
+    .cacheresp_msg (dcache_resp_msg_3),
+    .cacheresp_val (dcache_resp_val_3),
+    .cacheresp_rdy (dcache_resp_rdy_3),
+
+    .memreq_msg    (dcache_net_req_in_msg_3),
+    .memreq_val    (dcache_net_req_in_val_3),
+    .memreq_rdy    (dcache_net_req_in_rdy_3),
+
+    .memresp_msg   (dcache_net_resp_out_msg_3),
+    .memresp_val   (dcache_net_resp_out_val_3),
+    .memresp_rdy   (dcache_net_resp_out_rdy_3),
+    .sd            (1)
+
+  );
+
+  // $L2 data cache
+  plab3_mem_BlockingCacheL2
+  #(
+    .p_mem_nbytes         (p_dcache_nbytes),
+    .p_num_banks          (p_num_cores),
+    .p_opaque_nbits       (o)
+  )
+  l2_dcache_3
+  (
+    .clk           (clk),
+    .reset         (reset),
+
+    .cachereq_msg  (dcache_net_req_out_msg_3),
+    .cachereq_val  (dcache_net_req_out_val_3),
+    .cachereq_rdy  (dcache_net_req_out_rdy_3),
+
+    .cacheresp_msg (dcache_net_resp_in_msg_3),
+    .cacheresp_val (dcache_net_resp_in_val_3),
+    .cacheresp_rdy (dcache_net_resp_in_rdy_3),
+
+    .memreq_msg    (dcache_refill_net_req_in_msg_3),
+    .memreq_val    (dcache_refill_net_req_in_val_3),
+    .memreq_rdy    (dcache_refill_net_req_in_rdy_3),
+
+    .memresp_msg   (dcache_refill_net_resp_out_msg_3),
+    .memresp_val   (dcache_refill_net_resp_out_val_3),
+    .memresp_rdy   (dcache_refill_net_resp_out_rdy_3),
+    .sd            (1)
+
+  );
+
+  // =============================== On-Chip Networks ==========================
+  // dcache net ===============================================================
+
+  wire [mrq-1:0] {Domain cur_sd} dcache_net_req_out_msg_pre_0;
+  wire           {Domain cur_sd} dcache_net_req_out_val_pre_0;
+  wire           {Domain cur_sd} dcache_net_req_out_rdy_pre_0;
+  
+  wire [mrq-1:0] {Domain cur_sd} dcache_net_req_out_msg_pre_1;
+  wire           {Domain cur_sd} dcache_net_req_out_val_pre_1;
+  wire           {Domain cur_sd} dcache_net_req_out_rdy_pre_1;
+  
+  wire [mrq-1:0] {Domain cur_sd} dcache_net_req_out_msg_pre_2;
+  wire           {Domain cur_sd} dcache_net_req_out_val_pre_2;
+  wire           {Domain cur_sd} dcache_net_req_out_rdy_pre_2;
+  
+  wire [mrq-1:0] {Domain cur_sd} dcache_net_req_out_msg_pre_3;
+  wire           {Domain cur_sd} dcache_net_req_out_val_pre_3;
+  wire           {Domain cur_sd} dcache_net_req_out_rdy_pre_3;
+  
+  wire [mrs-1:0] {Domain cur_sd} dcache_net_resp_out_msg_pre_0;
+  wire           {Domain cur_sd} dcache_net_resp_out_val_pre_0;
+  wire           {Domain cur_sd} dcache_net_resp_out_rdy_pre_0;
+  
+  wire [mrs-1:0] {Domain cur_sd} dcache_net_resp_out_msg_pre_1;
+  wire           {Domain cur_sd} dcache_net_resp_out_val_pre_1;
+  wire           {Domain cur_sd} dcache_net_resp_out_rdy_pre_1;
+  
+  wire [mrs-1:0] {Domain cur_sd} dcache_net_resp_out_msg_pre_2;
+  wire           {Domain cur_sd} dcache_net_resp_out_val_pre_2;
+  wire           {Domain cur_sd} dcache_net_resp_out_rdy_pre_2;
+  
+  wire [mrs-1:0] {Domain cur_sd} dcache_net_resp_out_msg_pre_3;
+  wire           {Domain cur_sd} dcache_net_resp_out_val_pre_3;
+  wire           {Domain cur_sd} dcache_net_resp_out_rdy_pre_3;
+  
   plab5_mcore_MemNet
   #(
     .p_mem_opaque_nbits   (o),
@@ -385,26 +950,115 @@ module plab5_mcore_ProcCacheNetAlt
     .clk          (clk),
     .reset        (reset),
 
-    .req_in_msg   (dcache_net_req_in_msg),
-    .req_in_val   (dcache_net_req_in_val),
-    .req_in_rdy   (dcache_net_req_in_rdy),
+    .req_in_msg_0   (dcache_net_req_in_msg_0),
+    .req_in_val_0   (dcache_net_req_in_val_0),
+    .req_in_rdy_0   (dcache_net_req_in_rdy_0),
+    .req_in_sd_0    (0),
+    
+    .req_in_msg_1   (dcache_net_req_in_msg_1),
+    .req_in_val_1   (dcache_net_req_in_val_1),
+    .req_in_rdy_1   (dcache_net_req_in_rdy_1),
+    .req_in_sd_1    (0),
+    
+    .req_in_msg_2   (dcache_net_req_in_msg_2),
+    .req_in_val_2   (dcache_net_req_in_val_2),
+    .req_in_rdy_2   (dcache_net_req_in_rdy_2),
+    .req_in_sd_2    (1),
+    
+    .req_in_msg_3   (dcache_net_req_in_msg_3),
+    .req_in_val_3   (dcache_net_req_in_val_3),
+    .req_in_rdy_3   (dcache_net_req_in_rdy_3),
+    .req_in_sd_3    (1),
 
-    .req_out_msg  (dcache_net_req_out_msg),
-    .req_out_val  (dcache_net_req_out_val),
-    .req_out_rdy  (dcache_net_req_out_rdy),
+    .req_out_msg_0  (dcache_net_req_out_msg_pre_0),
+    .req_out_val_0  (dcache_net_req_out_val_pre_0),
+    .req_out_rdy_0  (dcache_net_req_out_rdy_pre_0),
+    
+    .req_out_msg_1  (dcache_net_req_out_msg_pre_1),
+    .req_out_val_1  (dcache_net_req_out_val_pre_1),
+    .req_out_rdy_1  (dcache_net_req_out_rdy_pre_1),
+    
+    .req_out_msg_2  (dcache_net_req_out_msg_pre_2),
+    .req_out_val_2  (dcache_net_req_out_val_pre_2),
+    .req_out_rdy_2  (dcache_net_req_out_rdy_pre_2),
+    
+    .req_out_msg_3  (dcache_net_req_out_msg_pre_3),
+    .req_out_val_3  (dcache_net_req_out_val_pre_3),
+    .req_out_rdy_3  (dcache_net_req_out_rdy_pre_3),
 
-    .resp_in_msg  (dcache_net_resp_in_msg),
-    .resp_in_val  (dcache_net_resp_in_val),
-    .resp_in_rdy  (dcache_net_resp_in_rdy),
+    .resp_in_msg_0  (dcache_net_resp_in_msg_0),
+    .resp_in_val_0  (dcache_net_resp_in_val_0),
+    .resp_in_rdy_0  (dcache_net_resp_in_rdy_0),
+    .resp_in_sd_0   (0),
+    
+    .resp_in_msg_1  (dcache_net_resp_in_msg_1),
+    .resp_in_val_1  (dcache_net_resp_in_val_1),
+    .resp_in_rdy_1  (dcache_net_resp_in_rdy_1),
+    .resp_in_sd_1   (0),
+    
+    .resp_in_msg_2  (dcache_net_resp_in_msg_2),
+    .resp_in_val_2  (dcache_net_resp_in_val_2),
+    .resp_in_rdy_2  (dcache_net_resp_in_rdy_2),
+    .resp_in_sd_2   (1),
+    
+    .resp_in_msg_3  (dcache_net_resp_in_msg_3),
+    .resp_in_val_3  (dcache_net_resp_in_val_3),
+    .resp_in_rdy_3  (dcache_net_resp_in_rdy_3),
+    .resp_in_sd_3   (1),
 
-    .resp_out_msg (dcache_net_resp_out_msg),
-    .resp_out_val (dcache_net_resp_out_val),
-    .resp_out_rdy (dcache_net_resp_out_rdy)
+    .resp_out_msg_0 (dcache_net_resp_out_msg_pre_0),
+    .resp_out_val_0 (dcache_net_resp_out_val_pre_0),
+    .resp_out_rdy_0 (dcache_net_resp_out_rdy_pre_0),
+    
+    .resp_out_msg_1 (dcache_net_resp_out_msg_pre_1),
+    .resp_out_val_1 (dcache_net_resp_out_val_pre_1),
+    .resp_out_rdy_1 (dcache_net_resp_out_rdy_pre_1),
+    
+    .resp_out_msg_2 (dcache_net_resp_out_msg_pre_2),
+    .resp_out_val_2 (dcache_net_resp_out_val_pre_2),
+    .resp_out_rdy_2 (dcache_net_resp_out_rdy_pre_2),
+    
+    .resp_out_msg_3 (dcache_net_resp_out_msg_pre_3),
+    .resp_out_val_3 (dcache_net_resp_out_val_pre_3),
+    .resp_out_rdy_3 (dcache_net_resp_out_rdy_pre_3),
+    
+    .cur_sd         (cur_sd)
   );
+  
+  assign dcache_net_req_out_msg_0 = (cur_sd == 0) ? dcache_net_req_out_msg_pre_0 : 0;
+  assign dcache_net_req_out_val_0 = (cur_sd == 0) ? dcache_net_req_out_val_pre_0 : 0;
+  assign dcache_net_req_out_rdy_pre_0 = (cur_sd == 0) ? dcache_net_req_out_rdy_0 : 0;
+  
+  assign dcache_net_req_out_msg_1 = (cur_sd == 0) ? dcache_net_req_out_msg_pre_1 : 0;
+  assign dcache_net_req_out_val_1 = (cur_sd == 0) ? dcache_net_req_out_val_pre_1 : 0;
+  assign dcache_net_req_out_rdy_pre_1 = (cur_sd == 0) ? dcache_net_req_out_rdy_1 : 0;
+  
+  assign dcache_net_req_out_msg_2 = (cur_sd == 1) ? dcache_net_req_out_msg_pre_2 : 0;
+  assign dcache_net_req_out_val_2 = (cur_sd == 1) ? dcache_net_req_out_val_pre_2 : 0;
+  assign dcache_net_req_out_rdy_pre_2 = (cur_sd == 1) ? dcache_net_req_out_rdy_2 : 0;
+  
+  assign dcache_net_req_out_msg_3 = (cur_sd == 1) ? dcache_net_req_out_msg_pre_3 : 0;
+  assign dcache_net_req_out_val_3 = (cur_sd == 1) ? dcache_net_req_out_val_pre_3 : 0;
+  assign dcache_net_req_out_rdy_pre_3 = (cur_sd == 1) ? dcache_net_req_out_rdy_3 : 0;
 
-  // icache refill net
+  // icache refill net =============================================================
+  wire [mrs-1:0] {Domain cur_sd} icache_refill_net_resp_out_msg_pre_0;
+  wire           {Domain cur_sd} icache_refill_net_resp_out_val_pre_0;
+  wire           {Domain cur_sd} icache_refill_net_resp_out_rdy_pre_0;
 
-  plab5_mcore_MemNet
+  wire [mrs-1:0] {Domain cur_sd} icache_refill_net_resp_out_msg_pre_1;
+  wire           {Domain cur_sd} icache_refill_net_resp_out_val_pre_1;
+  wire           {Domain cur_sd} icache_refill_net_resp_out_rdy_pre_1;
+
+  wire [mrs-1:0] {Domain cur_sd} icache_refill_net_resp_out_msg_pre_2;
+  wire           {Domain cur_sd} icache_refill_net_resp_out_val_pre_2;
+  wire           {Domain cur_sd} icache_refill_net_resp_out_rdy_pre_2;
+
+  wire [mrs-1:0] {Domain cur_sd} icache_refill_net_resp_out_msg_pre_3;
+  wire           {Domain cur_sd} icache_refill_net_resp_out_val_pre_3;
+  wire           {Domain cur_sd} icache_refill_net_resp_out_rdy_pre_3;
+  
+  plab5_mcore_RefillNet
   #(
     .p_mem_opaque_nbits   (o),
     .p_mem_addr_nbits     (a),
@@ -419,26 +1073,115 @@ module plab5_mcore_ProcCacheNetAlt
     .clk          (clk),
     .reset        (reset),
 
-    .req_in_msg   (icache_refill_net_req_in_msg),
-    .req_in_val   (icache_refill_net_req_in_val),
-    .req_in_rdy   (icache_refill_net_req_in_rdy),
+    .req_in_msg_0   (icache_refill_net_req_in_msg_0),
+    .req_in_val_0   (icache_refill_net_req_in_val_0),
+    .req_in_rdy_0   (icache_refill_net_req_in_rdy_0),
+    .req_in_sd_0    (0),
+    
+    .req_in_msg_1   (icache_refill_net_req_in_msg_1),
+    .req_in_val_1   (icache_refill_net_req_in_val_1),
+    .req_in_rdy_1   (icache_refill_net_req_in_rdy_1),
+    .req_in_sd_1    (0),
+    
+    .req_in_msg_2   (icache_refill_net_req_in_msg_2),
+    .req_in_val_2   (icache_refill_net_req_in_val_2),
+    .req_in_rdy_2   (icache_refill_net_req_in_rdy_2),
+    .req_in_sd_2    (1),
+    
+    .req_in_msg_3   (icache_refill_net_req_in_msg_3),
+    .req_in_val_3   (icache_refill_net_req_in_val_3),
+    .req_in_rdy_3   (icache_refill_net_req_in_rdy_3),
+    .req_in_sd_3    (1),
 
-    .req_out_msg  (icache_refill_net_req_out_msg),
-    .req_out_val  (icache_refill_net_req_out_val),
-    .req_out_rdy  (icache_refill_net_req_out_rdy),
+    .req_out_msg_0  (icache_refill_net_req_out_msg_0),
+    .req_out_val_0  (icache_refill_net_req_out_val_0),
+    .req_out_rdy_0  (icache_refill_net_req_out_rdy_0),
+    
+    .req_out_msg_1  (icache_refill_net_req_out_msg_1),
+    .req_out_val_1  (icache_refill_net_req_out_val_1),
+    .req_out_rdy_1  (icache_refill_net_req_out_rdy_1),
+    
+    .req_out_msg_2  (icache_refill_net_req_out_msg_2),
+    .req_out_val_2  (icache_refill_net_req_out_val_2),
+    .req_out_rdy_2  (icache_refill_net_req_out_rdy_2),
+    
+    .req_out_msg_3  (icache_refill_net_req_out_msg_3),
+    .req_out_val_3  (icache_refill_net_req_out_val_3),
+    .req_out_rdy_3  (icache_refill_net_req_out_rdy_3),
 
-    .resp_in_msg  (icache_refill_net_resp_in_msg),
-    .resp_in_val  (icache_refill_net_resp_in_val),
-    .resp_in_rdy  (icache_refill_net_resp_in_rdy),
+    .resp_in_msg_0  (icache_refill_net_resp_in_msg_0),
+    .resp_in_val_0  (icache_refill_net_resp_in_val_0),
+    .resp_in_rdy_0  (icache_refill_net_resp_in_rdy_0),
+    .resp_in_sd_0   (0),
+    
+    .resp_in_msg_1  (icache_refill_net_resp_in_msg_1),
+    .resp_in_val_1  (icache_refill_net_resp_in_val_1),
+    .resp_in_rdy_1  (icache_refill_net_resp_in_rdy_1),
+    .resp_in_sd_1   (0),
+    
+    .resp_in_msg_2  (icache_refill_net_resp_in_msg_2),
+    .resp_in_val_2  (icache_refill_net_resp_in_val_2),
+    .resp_in_rdy_2  (icache_refill_net_resp_in_rdy_2),
+    .resp_in_sd_2   (1),
+    
+    .resp_in_msg_3  (icache_refill_net_resp_in_msg_3),
+    .resp_in_val_3  (icache_refill_net_resp_in_val_3),
+    .resp_in_rdy_3  (icache_refill_net_resp_in_rdy_3),
+    .resp_in_sd_3   (1),
 
-    .resp_out_msg (icache_refill_net_resp_out_msg),
-    .resp_out_val (icache_refill_net_resp_out_val),
-    .resp_out_rdy (icache_refill_net_resp_out_rdy)
+    .resp_out_msg_0 (icache_refill_net_resp_out_msg_pre_0),
+    .resp_out_val_0 (icache_refill_net_resp_out_val_pre_0),
+    .resp_out_rdy_0 (icache_refill_net_resp_out_rdy_pre_0),
+    
+    .resp_out_msg_1 (icache_refill_net_resp_out_msg_pre_1),
+    .resp_out_val_1 (icache_refill_net_resp_out_val_pre_1),
+    .resp_out_rdy_1 (icache_refill_net_resp_out_rdy_pre_1),
+    
+    .resp_out_msg_2 (icache_refill_net_resp_out_msg_pre_2),
+    .resp_out_val_2 (icache_refill_net_resp_out_val_pre_2),
+    .resp_out_rdy_2 (icache_refill_net_resp_out_rdy_pre_2),
+    
+    .resp_out_msg_3 (icache_refill_net_resp_out_msg_pre_3),
+    .resp_out_val_3 (icache_refill_net_resp_out_val_pre_3),
+    .resp_out_rdy_3 (icache_refill_net_resp_out_rdy_pre_3),
+    
+    .cur_sd         (cur_sd)
   );
+  
+  assign icache_refill_net_resp_out_msg_0 = (cur_sd == 0) ? icache_refill_net_resp_out_msg_pre_0 : 0;
+  assign icache_refill_net_resp_out_val_0 = (cur_sd == 0) ? icache_refill_net_resp_out_val_pre_0 : 0;
+  assign icache_refill_net_resp_out_rdy_pre_0 = (cur_sd == 0) ? icache_refill_net_resp_out_rdy_0 : 0;
 
-  // dcache refill net
+  assign icache_refill_net_resp_out_msg_1 = (cur_sd == 0) ? icache_refill_net_resp_out_msg_pre_1 : 0;
+  assign icache_refill_net_resp_out_val_1 = (cur_sd == 0) ? icache_refill_net_resp_out_val_pre_1 : 0;
+  assign icache_refill_net_resp_out_rdy_pre_1 = (cur_sd == 0) ? icache_refill_net_resp_out_rdy_1 : 0;
 
-  plab5_mcore_MemNet
+  assign icache_refill_net_resp_out_msg_2 = (cur_sd == 1) ? icache_refill_net_resp_out_msg_pre_2 : 0;
+  assign icache_refill_net_resp_out_val_2 = (cur_sd == 1) ? icache_refill_net_resp_out_val_pre_2 : 0;
+  assign icache_refill_net_resp_out_rdy_pre_2 = (cur_sd == 1) ? icache_refill_net_resp_out_rdy_2 : 0;
+
+  assign icache_refill_net_resp_out_msg_3 = (cur_sd == 1) ? icache_refill_net_resp_out_msg_pre_3 : 0;
+  assign icache_refill_net_resp_out_val_3 = (cur_sd == 1) ? icache_refill_net_resp_out_val_pre_3 : 0;
+  assign icache_refill_net_resp_out_rdy_pre_3 = (cur_sd == 1) ? icache_refill_net_resp_out_rdy_3 : 0;
+
+  // dcache refill net =======================================================
+  wire [mrs-1:0] {Domain cur_sd} dcache_refill_net_resp_out_msg_pre_0;
+  wire           {Domain cur_sd} dcache_refill_net_resp_out_val_pre_0;
+  wire           {Domain cur_sd} dcache_refill_net_resp_out_rdy_pre_0;
+
+  wire [mrs-1:0] {Domain cur_sd} dcache_refill_net_resp_out_msg_pre_1;
+  wire           {Domain cur_sd} dcache_refill_net_resp_out_val_pre_1;
+  wire           {Domain cur_sd} dcache_refill_net_resp_out_rdy_pre_1;
+
+  wire [mrs-1:0] {Domain cur_sd} dcache_refill_net_resp_out_msg_pre_2;
+  wire           {Domain cur_sd} dcache_refill_net_resp_out_val_pre_2;
+  wire           {Domain cur_sd} dcache_refill_net_resp_out_rdy_pre_2;
+
+  wire [mrs-1:0] {Domain cur_sd} dcache_refill_net_resp_out_msg_pre_3;
+  wire           {Domain cur_sd} dcache_refill_net_resp_out_val_pre_3;
+  wire           {Domain cur_sd} dcache_refill_net_resp_out_rdy_pre_3;
+  
+  plab5_mcore_RefillNet
   #(
     .p_mem_opaque_nbits   (o),
     .p_mem_addr_nbits     (a),
@@ -453,72 +1196,146 @@ module plab5_mcore_ProcCacheNetAlt
     .clk          (clk),
     .reset        (reset),
 
-    .req_in_msg   (dcache_refill_net_req_in_msg),
-    .req_in_val   (dcache_refill_net_req_in_val),
-    .req_in_rdy   (dcache_refill_net_req_in_rdy),
+    .req_in_msg_0   (dcache_refill_net_req_in_msg_0),
+    .req_in_val_0   (dcache_refill_net_req_in_val_0),
+    .req_in_rdy_0   (dcache_refill_net_req_in_rdy_0),
+    .req_in_sd_0    (0),
+    
+    .req_in_msg_1   (dcache_refill_net_req_in_msg_1),
+    .req_in_val_1   (dcache_refill_net_req_in_val_1),
+    .req_in_rdy_1   (dcache_refill_net_req_in_rdy_1),
+    .req_in_sd_1    (0),
+    
+    .req_in_msg_2   (dcache_refill_net_req_in_msg_2),
+    .req_in_val_2   (dcache_refill_net_req_in_val_2),
+    .req_in_rdy_2   (dcache_refill_net_req_in_rdy_2),
+    .req_in_sd_2    (1),
+    
+    .req_in_msg_3   (dcache_refill_net_req_in_msg_3),
+    .req_in_val_3   (dcache_refill_net_req_in_val_3),
+    .req_in_rdy_3   (dcache_refill_net_req_in_rdy_3),
+    .req_in_sd_3    (1),
 
-    .req_out_msg  (dcache_refill_net_req_out_msg),
-    .req_out_val  (dcache_refill_net_req_out_val),
-    .req_out_rdy  (dcache_refill_net_req_out_rdy),
+    .req_out_msg_0  (dcache_refill_net_req_out_msg_0),
+    .req_out_val_0  (dcache_refill_net_req_out_val_0),
+    .req_out_rdy_0  (dcache_refill_net_req_out_rdy_0),
+    
+    .req_out_msg_1  (dcache_refill_net_req_out_msg_1),
+    .req_out_val_1  (dcache_refill_net_req_out_val_1),
+    .req_out_rdy_1  (dcache_refill_net_req_out_rdy_1),
+    
+    .req_out_msg_2  (dcache_refill_net_req_out_msg_2),
+    .req_out_val_2  (dcache_refill_net_req_out_val_2),
+    .req_out_rdy_2  (dcache_refill_net_req_out_rdy_2),
+    
+    .req_out_msg_3  (dcache_refill_net_req_out_msg_3),
+    .req_out_val_3  (dcache_refill_net_req_out_val_3),
+    .req_out_rdy_3  (dcache_refill_net_req_out_rdy_3),
 
-    .resp_in_msg  (dcache_refill_net_resp_in_msg),
-    .resp_in_val  (dcache_refill_net_resp_in_val),
-    .resp_in_rdy  (dcache_refill_net_resp_in_rdy),
+    .resp_in_msg_0  (dcache_refill_net_resp_in_msg_0),
+    .resp_in_val_0  (dcache_refill_net_resp_in_val_0),
+    .resp_in_rdy_0  (dcache_refill_net_resp_in_rdy_0),
+    .resp_in_sd_0   (0),
+    
+    .resp_in_msg_1  (dcache_refill_net_resp_in_msg_1),
+    .resp_in_val_1  (dcache_refill_net_resp_in_val_1),
+    .resp_in_rdy_1  (dcache_refill_net_resp_in_rdy_1),
+    .resp_in_sd_1   (0),
+    
+    .resp_in_msg_2  (dcache_refill_net_resp_in_msg_2),
+    .resp_in_val_2  (dcache_refill_net_resp_in_val_2),
+    .resp_in_rdy_2  (dcache_refill_net_resp_in_rdy_2),
+    .resp_in_sd_2   (1),
+    
+    .resp_in_msg_3  (dcache_refill_net_resp_in_msg_3),
+    .resp_in_val_3  (dcache_refill_net_resp_in_val_3),
+    .resp_in_rdy_3  (dcache_refill_net_resp_in_rdy_3),
+    .resp_in_sd_3   (1),
 
-    .resp_out_msg (dcache_refill_net_resp_out_msg),
-    .resp_out_val (dcache_refill_net_resp_out_val),
-    .resp_out_rdy (dcache_refill_net_resp_out_rdy)
+    .resp_out_msg_0 (dcache_refill_net_resp_out_msg_pre_0),
+    .resp_out_val_0 (dcache_refill_net_resp_out_val_pre_0),
+    .resp_out_rdy_0 (dcache_refill_net_resp_out_rdy_pre_0),
+                                               
+    .resp_out_msg_1 (dcache_refill_net_resp_out_msg_pre_1),
+    .resp_out_val_1 (dcache_refill_net_resp_out_val_pre_1),
+    .resp_out_rdy_1 (dcache_refill_net_resp_out_rdy_pre_1),
+                                               
+    .resp_out_msg_2 (dcache_refill_net_resp_out_msg_pre_2),
+    .resp_out_val_2 (dcache_refill_net_resp_out_val_pre_2),
+    .resp_out_rdy_2 (dcache_refill_net_resp_out_rdy_pre_2),
+                                               
+    .resp_out_msg_3 (dcache_refill_net_resp_out_msg_pre_3),
+    .resp_out_val_3 (dcache_refill_net_resp_out_val_pre_3),
+    .resp_out_rdy_3 (dcache_refill_net_resp_out_rdy_pre_3),
+    
+    .cur_sd         (cur_sd)
   );
+  
+  assign dcache_refill_net_resp_out_msg_0 = (cur_sd == 0) ? dcache_refill_net_resp_out_msg_pre_0 : 0;
+  assign dcache_refill_net_resp_out_val_0 = (cur_sd == 0) ? dcache_refill_net_resp_out_val_pre_0 : 0;
+  assign dcache_refill_net_resp_out_rdy_pre_0 = (cur_sd == 0) ? dcache_refill_net_resp_out_rdy_0 : 0;
 
+  assign dcache_refill_net_resp_out_msg_1 = (cur_sd == 0) ? dcache_refill_net_resp_out_msg_pre_1 : 0;
+  assign dcache_refill_net_resp_out_val_1 = (cur_sd == 0) ? dcache_refill_net_resp_out_val_pre_1 : 0;
+  assign dcache_refill_net_resp_out_rdy_pre_1 = (cur_sd == 0) ? dcache_refill_net_resp_out_rdy_1 : 0;
 
+  assign dcache_refill_net_resp_out_msg_2 = (cur_sd == 1) ? dcache_refill_net_resp_out_msg_pre_2 : 0;
+  assign dcache_refill_net_resp_out_val_2 = (cur_sd == 1) ? dcache_refill_net_resp_out_val_pre_2 : 0;
+  assign dcache_refill_net_resp_out_rdy_pre_2 = (cur_sd == 1) ? dcache_refill_net_resp_out_rdy_2 : 0;
+
+  assign dcache_refill_net_resp_out_msg_3 = (cur_sd == 1) ? dcache_refill_net_resp_out_msg_pre_3 : 0;
+  assign dcache_refill_net_resp_out_val_3 = (cur_sd == 1) ? dcache_refill_net_resp_out_val_pre_3 : 0;
+  assign dcache_refill_net_resp_out_rdy_pre_3 = (cur_sd == 1) ? dcache_refill_net_resp_out_rdy_3 : 0;
+
+  
   // assign the global memory ports to refill ports
 
-  assign memreq0_msg = icache_refill_net_req_out_msg[`VC_PORT_PICK_FIELD(mrq,0)];
-  assign memreq0_val = icache_refill_net_req_out_val[`VC_PORT_PICK_FIELD(1  ,0)];
-  assign icache_refill_net_req_out_rdy[`VC_PORT_PICK_FIELD(1  ,0)] = memreq0_rdy;
+  assign memreq0_msg = icache_refill_net_req_out_msg_0;
+  assign memreq0_val = icache_refill_net_req_out_val_0;
+  assign icache_refill_net_req_out_rdy_0 = memreq0_rdy;
 
-  assign icache_refill_net_resp_in_msg[`VC_PORT_PICK_FIELD(mrs,0)] = memresp0_msg;
-  assign icache_refill_net_resp_in_val[`VC_PORT_PICK_FIELD(1  ,0)] = memresp0_val;
-  assign memresp0_rdy = icache_refill_net_resp_in_rdy[`VC_PORT_PICK_FIELD(1  ,0)];
+  assign icache_refill_net_resp_in_msg_0 = memresp0_msg;
+  assign icache_refill_net_resp_in_val_0 = memresp0_val;
+  assign memresp0_rdy = icache_refill_net_resp_in_rdy_0;
 
-  assign memreq1_msg = dcache_refill_net_req_out_msg[`VC_PORT_PICK_FIELD(mrq,0)];
-  assign memreq1_val = dcache_refill_net_req_out_val[`VC_PORT_PICK_FIELD(1  ,0)];
-  assign dcache_refill_net_req_out_rdy[`VC_PORT_PICK_FIELD(1  ,0)] = memreq1_rdy;
+  assign memreq1_msg = dcache_refill_net_req_out_msg_0;
+  assign memreq1_val = dcache_refill_net_req_out_val_0;
+  assign dcache_refill_net_req_out_rdy_0 = memreq1_rdy;
 
-  assign dcache_refill_net_resp_in_msg[`VC_PORT_PICK_FIELD(mrs,0)] = memresp1_msg;
-  assign dcache_refill_net_resp_in_val[`VC_PORT_PICK_FIELD(1  ,0)] = memresp1_val;
-  assign memresp1_rdy = dcache_refill_net_resp_in_rdy[`VC_PORT_PICK_FIELD(1  ,0)];
+  assign dcache_refill_net_resp_in_msg_0 = memresp1_msg;
+  assign dcache_refill_net_resp_in_val_0 = memresp1_val;
+  assign memresp1_rdy = dcache_refill_net_resp_in_rdy_0;
 
-  `include "vc-trace-tasks.v"
-
-  task trace_module( inout [vc_trace_nbits-1:0] trace );
-  begin
-    CORES_CACHES[0].PROC.proc.trace_module( trace );
-    vc_trace_str( trace, "|" );
-    CORES_CACHES[0].icache.trace_module( trace );
-    CORES_CACHES[0].l1_dcache.trace_module( trace );
-    CORES_CACHES[0].l2_dcache.trace_module( trace );
-
-    vc_trace_str( trace, "|" );
-    CORES_CACHES[1].PROC.proc.trace_module( trace );
-    vc_trace_str( trace, "|" );
-    CORES_CACHES[1].l1_dcache.trace_module( trace );
-    CORES_CACHES[1].l2_dcache.trace_module( trace );
-
-    vc_trace_str( trace, "|" );
-    CORES_CACHES[2].PROC.proc.trace_module( trace );
-    vc_trace_str( trace, "|" );
-    CORES_CACHES[2].l1_dcache.trace_module( trace );
-    CORES_CACHES[2].l2_dcache.trace_module( trace );
-
-    vc_trace_str( trace, "|" );
-    CORES_CACHES[3].PROC.proc.trace_module( trace );
-    vc_trace_str( trace, "|" );
-    CORES_CACHES[3].l1_dcache.trace_module( trace );
-    CORES_CACHES[3].l2_dcache.trace_module( trace );
-
-  end
-  endtask
+  // `include "vc-trace-tasks.v"
+  //
+  // task trace_module( inout [vc_trace_nbits-1:0] trace );
+  // begin
+  //   CORES_CACHES[0].PROC.proc.trace_module( trace );
+  //   vc_trace_str( trace, "|" );
+  //   CORES_CACHES[0].icache.trace_module( trace );
+  //   CORES_CACHES[0].l1_dcache.trace_module( trace );
+  //   CORES_CACHES[0].l2_dcache.trace_module( trace );
+  //
+  //   vc_trace_str( trace, "|" );
+  //   CORES_CACHES[1].PROC.proc.trace_module( trace );
+  //   vc_trace_str( trace, "|" );
+  //   CORES_CACHES[1].l1_dcache.trace_module( trace );
+  //   CORES_CACHES[1].l2_dcache.trace_module( trace );
+  //
+  //   vc_trace_str( trace, "|" );
+  //   CORES_CACHES[2].PROC.proc.trace_module( trace );
+  //   vc_trace_str( trace, "|" );
+  //   CORES_CACHES[2].l1_dcache.trace_module( trace );
+  //   CORES_CACHES[2].l2_dcache.trace_module( trace );
+  //
+  //   vc_trace_str( trace, "|" );
+  //   CORES_CACHES[3].PROC.proc.trace_module( trace );
+  //   vc_trace_str( trace, "|" );
+  //   CORES_CACHES[3].l1_dcache.trace_module( trace );
+  //   CORES_CACHES[3].l2_dcache.trace_module( trace );
+  //
+  // end
+  // endtask
 
   //+++ gen-harness : end cut ++++++++++++++++++++++++++++++++++++++++++++
 

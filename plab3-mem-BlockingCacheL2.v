@@ -33,7 +33,7 @@ module plab3_mem_BlockingCacheL2
 
   input [`VC_MEM_REQ_MSG_NBITS(o,abw,dbw)-1:0]  {Domain sd} cachereq_msg,
   input                                         {Domain sd} cachereq_val,
-  output                                        {Domain sd} achereq_rdy,
+  output                                        {Domain sd} cachereq_rdy,
 
   // Cache Response
 
