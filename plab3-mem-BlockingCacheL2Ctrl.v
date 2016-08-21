@@ -18,6 +18,10 @@ module plab3_mem_BlockingCacheL2Ctrl
   parameter p_idx_shamt = 0,
 
   parameter p_opaque_nbits  = 8,
+  
+  parameter p_net_srcdest_nbits = 2,
+  
+  parameter p_bank_id = 0,
 
   // local parameters not meant to be set from outside
   parameter dbw     = 32,             // Short name for data bitwidth
@@ -51,6 +55,16 @@ module plab3_mem_BlockingCacheL2Ctrl
   input                                               {Domain sd} memresp_val,
   output reg                                          {Domain sd} memresp_rdy,
 
+  // Coherent Memory Request
+  
+  output                                              {Domain sd} coherereq_val,
+  input                                               {Domain sd} coherereq_rdy,
+  
+  // Coherent Memory Response
+  
+  input                                               {Domain sd} cohereresp_val,
+  output                                              {Domain sd} cohereresp_rdy,
+  
   // control signals (ctrl->dpath)
   output reg [1:0]                                    {Domain sd} amo_sel,
   output reg                                          {Domain sd} cachereq_en,
@@ -70,12 +84,15 @@ module plab3_mem_BlockingCacheL2Ctrl
   output [$clog2(clw/dbw)-1:0]                        {Domain sd} read_byte_sel,
   output reg [`VC_MEM_RESP_MSG_TYPE_NBITS(o,clw)-1:0] {Domain sd} memreq_type,
   output reg [`VC_MEM_RESP_MSG_TYPE_NBITS(o,dbw)-1:0] {Domain sd} cacheresp_type,
+  output reg [1:0]                                    {Domain sd} req_sel,
+  output [1:0]                                        {Domain sd} cohere_dest,
 
    // status signals (dpath->ctrl)
   input [`VC_MEM_REQ_MSG_TYPE_NBITS(o,abw,dbw)-1:0]   {Domain sd} cachereq_type,
   input [`VC_MEM_REQ_MSG_ADDR_NBITS(o,abw,dbw)-1:0]   {Domain sd} cachereq_addr,
   input                                               {Domain sd} tag_match_0,
   input                                               {Domain sd} tag_match_1,
+  input [p_net_srcdest_nbits-1:0]                     {Domain sd} net_src,
   input                                               {L} sd
  );
 
@@ -83,20 +100,24 @@ module plab3_mem_BlockingCacheL2Ctrl
   // State Definitions
   //----------------------------------------------------------------------
 
-  localparam STATE_IDLE               = 4'd0;
-  localparam STATE_TAG_CHECK          = 4'd1;
-  localparam STATE_READ_DATA_ACCESS   = 4'd2;
-  localparam STATE_WRITE_DATA_ACCESS  = 4'd3;
-  localparam STATE_WAIT               = 4'd4;
-  localparam STATE_REFILL_REQUEST     = 4'd5;
-  localparam STATE_REFILL_WAIT        = 4'd6;
-  localparam STATE_REFILL_UPDATE      = 4'd7;
-  localparam STATE_EVICT_PREPARE      = 4'd8;
-  localparam STATE_EVICT_REQUEST      = 4'd9;
-  localparam STATE_EVICT_WAIT         = 4'd10;
-  localparam STATE_AMO_READ_DATA_ACCESS  = 4'd11;
-  localparam STATE_AMO_WRITE_DATA_ACCESS = 4'd12;
-  localparam STATE_INIT_DATA_ACCESS   = 4'd15;
+  localparam STATE_IDLE               = 5'd0;
+  localparam STATE_TAG_CHECK          = 5'd1;
+  localparam STATE_READ_DATA_ACCESS   = 5'd2;
+  localparam STATE_WRITE_DATA_ACCESS  = 5'd3;
+  localparam STATE_WAIT               = 5'd4;
+  localparam STATE_REFILL_REQUEST     = 5'd5;
+  localparam STATE_REFILL_WAIT        = 5'd6;
+  localparam STATE_REFILL_UPDATE      = 5'd7;
+  localparam STATE_EVICT_PREPARE      = 5'd8;
+  localparam STATE_EVICT_REQUEST      = 5'd9;
+  localparam STATE_EVICT_WAIT         = 5'd10;
+  localparam STATE_AMO_READ_DATA_ACCESS  = 5'd11;
+  localparam STATE_AMO_WRITE_DATA_ACCESS = 5'd12;
+  localparam STATE_INIT_DATA_ACCESS   = 5'd15;
+  localparam STATE_WAIT_FOR_UPPER     = 5'd16;
+  localparam STATE_LATCH_COHERE       = 5'd17;
+  localparam STATE_EXTRA_WAIT         = 5'd18;
+  localparam STATE_COHERE_REQUEST     = 5'd19;
 
   //----------------------------------------------------------------------
   // State
@@ -111,6 +132,13 @@ module plab3_mem_BlockingCacheL2Ctrl
     end
   end
 
+  wire [1:0] {Domain sd} sel_dir;
+  wire       {Domain sd} which_cache;
+  assign sel_dir = (way_sel == 1'b0) ? dir_state_0 : dir_state_1;
+  assign which_cache = (sel_dir == 2'b01) ? 1'b0 :
+                       (sel_dir == 2'b10) ? 1'b1 : 1'b0;
+  assign cohere_dest = (p_bank_id == 0 || p_bank_id == 1) ? {1'b0, which_cache} : {1'b1, which_cache};
+  
   //----------------------------------------------------------------------
   // State Transitions
   //----------------------------------------------------------------------
@@ -131,26 +159,62 @@ module plab3_mem_BlockingCacheL2Ctrl
   wire {Domain sd} miss_1       = !hit_1;
   wire {Domain sd} refill       = (miss_0 && !is_dirty_0 && !lru_way) || (miss_1 && !is_dirty_1 && lru_way);
   wire {Domain sd} evict        = (miss_0 && is_dirty_0 && !lru_way) || (miss_1 && is_dirty_1 && lru_way);
-
+  wire {Domain sd} evict_upper  = (miss_0 && dir_state_0 != 2'b00 && !lru_way) || (miss_1 && dir_state_1 != 2'b00 && lru_way);
+  wire {Domain sd} abnormal_hit = (hit_0 && net_src[0] == 1'b0 && dir_state_0 == 2'b10) || 
+                                  (hit_1 && net_src[0] == 1'b1 && dir_state_1 == 2'b01);
+  wire {Domain sd} normal_hit   = !abnormal_hit;
+  
+  wire [1:0] {Domain sd} dir_in_pre = (net_src[0] == 1'b0) ? 2'b01 : 2'b10;
+  
   reg [3:0] {Domain sd} state_reg;
   reg [3:0] {Domain sd} state_next;
 
+  reg {Domain sd} flag;
+  
   always @(*) begin
 
     state_next = state_reg;
     case ( state_reg )
 
       STATE_IDLE:
-             if ( in_go        ) state_next = STATE_TAG_CHECK;
+             if ( in_go        ) begin
+                 state_next = STATE_TAG_CHECK;
+                 req_sel = 2'd0;
+             end
 
       STATE_TAG_CHECK:
              if ( is_init      ) state_next = STATE_INIT_DATA_ACCESS;
-        else if ( read_hit     ) state_next = STATE_READ_DATA_ACCESS;
-        else if ( write_hit    ) state_next = STATE_WRITE_DATA_ACCESS;
+        else if ( read_hit && normal_hit  ) state_next = STATE_READ_DATA_ACCESS;
+        else if ( write_hit && normal_hit ) state_next = STATE_WRITE_DATA_ACCESS;
+        else if ( read_hit && !normal_hit ) begin
+            state_next = STATE_COHERE_REQUEST;
+            flag = 1'b1;
+        end
         else if ( amo_hit      ) state_next = STATE_AMO_READ_DATA_ACCESS;
+        else if ( evict_upper  ) begin
+            state_next = STATE_COHERE_REQUEST;
+            flag = 1'b1;
+        end
         else if ( refill       ) state_next = STATE_REFILL_REQUEST;
         else if ( evict        ) state_next = STATE_EVICT_PREPARE;
 
+      STATE_COHERE_REQUEST:
+             if (coherereq_rdy ) state_next = STATE_WAIT_FOR_UPPER;
+        else if (!coherereq_rdy) state_next = STATE_COHERE_REQUEST;
+        
+      STATE_WAIT_FOR_UPPER:
+             if (cohereresp_val) begin
+                 state_next = STATE_LATCH_COHERE;
+                 req_sel = 2'd1;
+             end
+             else begin
+                 state_next = STATE_WAIT_FOR_UPPER;
+                 req_sel = 2'd0;
+             end
+      
+      STATE_LATCH_COHERE:
+        state_next = STATE_TAG_CHECK;
+             
       STATE_READ_DATA_ACCESS:
         state_next = STATE_WAIT;
 
@@ -191,12 +255,53 @@ module plab3_mem_BlockingCacheL2Ctrl
         else if ( !memresp_val ) state_next = STATE_EVICT_WAIT;
 
       STATE_WAIT:
-             if ( out_go       ) state_next = STATE_IDLE;
+             if ( out_go && flag == 1'b0 ) state_next = STATE_IDLE;
+        else if ( flag == 1'b1 ) begin
+            state_next = STATE_EXTRA_WAIT;
+            flag = 1'b0;
+            req_sel = 2'd2;
+        end
+        
+      STATE_EXTRA_WAIT:
+        state_next = STATE_TAG_CHECK;
 
     endcase
 
   end
 
+  
+  // Directory array
+  reg  [1:0] {Domain sd} dir_in;
+  reg        {Domain sd} dir_write_en;
+  wire       {Domain sd} dir_write_en_0 = dir_write_en && !way_sel;
+  wire       {Domain sd} dir_write_en_1 = dir_write_en && way_sel;
+  wire [1:0] {Domain sd} dir_state_0;
+  wire [1:0] {Domain sd} dir_state_1;
+
+  vc_ResetRegfile_1r1w #(1,8) dir_array_0
+  (
+    .clk        (clk),
+    .reset      (reset),
+    .read_addr  (cachereq_idx),
+    .read_data  (dir_state_0),
+    .write_en   (dir_write_en_0),
+    .write_addr (cachereq_idx),
+    .write_data (dir_in),
+    .sd         (sd)
+  );
+
+  vc_ResetRegfile_1r1w #(1,8) dir_array_1
+  (
+    .clk        (clk),
+    .reset      (reset),
+    .read_addr  (cachereq_idx),
+    .read_data  (dir_state_1),
+    .write_en   (dir_write_en_1),
+    .write_addr (cachereq_idx),
+    .write_data (dir_in),
+    .sd         (sd)
+  );
+  
   //----------------------------------------------------------------------
   // Valid/Dirty bits record
   //----------------------------------------------------------------------
@@ -324,6 +429,7 @@ module plab3_mem_BlockingCacheL2Ctrl
   localparam m_x     = 1'dx;
   localparam m_e     = `VC_MEM_REQ_MSG_TYPE_WRITE; // write to memory in an _e_vict
   localparam m_r     = `VC_MEM_REQ_MSG_TYPE_READ;  // write to memory in a _r_efill
+  localparam m_g     = `VC_MEM_REQ_MSG_TYPE_GETM;  // coherent memory request
 
   reg {Domain sd} tag_array_wen;
   reg {Domain sd} tag_array_ren;
@@ -334,6 +440,8 @@ module plab3_mem_BlockingCacheL2Ctrl
    input cs_cacheresp_val,
    input cs_memreq_val,
    input cs_memresp_rdy,
+   input cs_coherereq_val,
+   input cs_cohereresp_rdy,
    input cs_cachereq_en,
    input cs_memresp_en,
    input cs_is_refill,
@@ -348,6 +456,8 @@ module plab3_mem_BlockingCacheL2Ctrl
    input cs_valid_bits_write_en,
    input cs_dirty_bit_in,
    input cs_dirty_bits_write_en,
+   input cs_dir_in,
+   input cs_dir_write_en,
    input cs_lru_bits_write_en,
    input cs_way_record_en
   );
@@ -356,6 +466,8 @@ module plab3_mem_BlockingCacheL2Ctrl
     cacheresp_val       = cs_cacheresp_val;
     memreq_val          = cs_memreq_val;
     memresp_rdy         = cs_memresp_rdy;
+    coherereq_val       = cs_coherereq_val;
+    cohereresp_rdy      = cs_cohereresp_rdy;
     cachereq_en         = cs_cachereq_en;
     memresp_en          = cs_memresp_en;
     is_refill           = cs_is_refill;
@@ -370,6 +482,8 @@ module plab3_mem_BlockingCacheL2Ctrl
     valid_bits_write_en = cs_valid_bits_write_en;
     dirty_bit_in        = cs_dirty_bit_in;
     dirty_bits_write_en = cs_dirty_bits_write_en;
+    dir_in              = cs_dir_in;
+    dir_write_en        = cs_dir_write_en;
     lru_bits_write_en   = cs_lru_bits_write_en;
     way_record_en       = cs_way_record_en;
   end
@@ -378,25 +492,29 @@ module plab3_mem_BlockingCacheL2Ctrl
   // Set outputs using a control signal "table"
 
   always @(*) begin
-                                   cs( 0,   0,    0,  0,   x,    x,   r_x,   0,    0,    0,    0,    0,   0,   m_x, x,    0,    x,    0,    0,    0       );
+                                   cs( 0,   0,    0,  0,   0,   0,    x,    x,   r_x,   0,    0,    0,    0,    0,   0,   m_x, x,    0,    x,    0,    0,    0       );
     case ( state_reg )
       //                              cache cache mem mem  cache mem         tag   tag   data  data  read read mem  valid valid dirty dirty lru   way
       //                              req   resp  req resp req   resp is     array array array array data tag  req  bit   write bit   write write record
       //                              rdy   val   val rdy  en    en   refill wen   ren   wen   ren   en   en   type in    en    in    en    en    en
-      STATE_IDLE:                  cs( 1,   0,    0,  0,   1,    0,   r_x,   0,    0,    0,    0,    0,   0,   m_x, x,    0,    x,    0,    0,    0       );
-      STATE_TAG_CHECK:             cs( 0,   0,    0,  0,   0,    0,   r_x,   0,    1,    0,    0,    0,   0,   m_x, x,    0,    x,    0,    0,    1       );
-      STATE_READ_DATA_ACCESS:      cs( 0,   0,    0,  0,   0,    0,   r_x,   0,    0,    0,    1,    1,   0,   m_x, x,    0,    x,    0,    1,    0       );
-      STATE_WRITE_DATA_ACCESS:     cs( 0,   0,    0,  0,   0,    0,   r_c,   1,    0,    1,    0,    0,   0,   m_x, 1,    1,    1,    1,    1,    0       );
-      STATE_INIT_DATA_ACCESS:      cs( 0,   0,    0,  0,   0,    0,   r_c,   1,    0,    1,    0,    0,   0,   m_x, 1,    1,    0,    1,    1,    0       );
-      STATE_AMO_READ_DATA_ACCESS:  cs( 0,   0,    0,  0,   0,    0,   r_x,   0,    0,    0,    1,    1,   0,   m_x, x,    0,    x,    0,    1,    0       );
-      STATE_AMO_WRITE_DATA_ACCESS: cs( 0,   0,    0,  0,   0,    0,   r_c,   1,    0,    1,    0,    0,   0,   m_x, 1,    1,    1,    1,    1,    0       );
-      STATE_REFILL_REQUEST:        cs( 0,   0,    1,  0,   0,    0,   r_x,   0,    0,    0,    0,    0,   0,   m_r, x,    0,    x,    0,    0,    0       );
-      STATE_REFILL_WAIT:           cs( 0,   0,    0,  1,   0,    1,   r_x,   0,    0,    0,    0,    0,   0,   m_x, x,    0,    x,    0,    0,    0       );
-      STATE_REFILL_UPDATE:         cs( 0,   0,    0,  0,   0,    0,   r_m,   1,    0,    1,    0,    0,   0,   m_x, 1,    1,    0,    1,    0,    0       );
-      STATE_EVICT_PREPARE:         cs( 0,   0,    0,  0,   0,    0,   r_x,   0,    1,    0,    1,    1,   1,   m_x, x,    0,    x,    0,    0,    0       );
-      STATE_EVICT_REQUEST:         cs( 0,   0,    1,  0,   0,    0,   r_x,   0,    0,    0,    0,    0,   0,   m_e, x,    0,    x,    0,    0,    0       );
-      STATE_EVICT_WAIT:            cs( 0,   0,    0,  1,   0,    0,   r_x,   0,    0,    0,    0,    0,   0,   m_x, x,    0,    x,    0,    0,    0       );
-      STATE_WAIT:                  cs( 0,   1,    0,  0,   0,    0,   r_x,   0,    0,    0,    0,    0,   0,   m_x, x,    0,    x,    0,    0,    0       );
+      STATE_IDLE:                  cs( 1,   0,    0,  0,   0,   1,    0,    0,   r_x,   0,    0,    0,    0,    0,   0,   m_x, x,    0,    x,    0,    0,    0,    0,    0       );
+      STATE_TAG_CHECK:             cs( 0,   0,    0,  0,   0,   0,    0,    0,   r_x,   0,    1,    0,    0,    0,   0,   m_x, x,    0,    x,    0,    0,    0,    0,    1       );
+      STATE_COHERE_REQUEST:        cs( 0,   0,    0,  0,   1,   0,    0,    0,   r_x,   0,    0,    0,    0,    0,   0,   m_g, x,    0,    x,    0,    0,    0,    0,    0       );
+      STATE_WAIT_FOR_UPPER:        cs( 0,   0,    0,  0,   0,   1,    0,    0,   r_x,   0,    0,    0,    0,    0,   0,   m_x, x,    0,    x,    0,    0,    0,    0,    0       );
+      STATE_LATCH_COHERE:          cs( 0,   0,    0,  0,   0,   1,    0,    0,   r_x,   0,    0,    0,    0,    0,   0,   m_x, x,    0,    x,    0,    0,    0,    0,    0       );
+      STATE_READ_DATA_ACCESS:      cs( 0,   0,    0,  0,   0,   0,    0,    0,   r_x,   0,    0,    0,    1,    1,   0,   m_x, x,    0,    x,    0,    dir_in_pre,    1,    1,    0       );
+      STATE_WRITE_DATA_ACCESS:     cs( 0,   0,    0,  0,   0,   0,    0,    0,   r_c,   1,    0,    1,    0,    0,   0,   m_x, 1,    1,    1,    1,    2'd0,    1,    1,    0       );
+      STATE_INIT_DATA_ACCESS:      cs( 0,   0,    0,  0,   0,   0,    0,    0,   r_c,   1,    0,    1,    0,    0,   0,   m_x, 1,    1,    0,    1,    0,    0,    1,    0       );
+      STATE_AMO_READ_DATA_ACCESS:  cs( 0,   0,    0,  0,   0,   0,    0,    0,   r_x,   0,    0,    0,    1,    1,   0,   m_x, x,    0,    x,    0,    0,    0,    1,    0       );
+      STATE_AMO_WRITE_DATA_ACCESS: cs( 0,   0,    0,  0,   0,   0,    0,    0,   r_c,   1,    0,    1,    0,    0,   0,   m_x, 1,    1,    1,    1,    0,    0,    1,    0       );
+      STATE_REFILL_REQUEST:        cs( 0,   0,    1,  0,   0,   0,    0,    0,   r_x,   0,    0,    0,    0,    0,   0,   m_r, x,    0,    x,    0,    0,    0,    0,    0       );
+      STATE_REFILL_WAIT:           cs( 0,   0,    0,  1,   0,   0,    0,    1,   r_x,   0,    0,    0,    0,    0,   0,   m_x, x,    0,    x,    0,    0,    0,    0,    0       );
+      STATE_REFILL_UPDATE:         cs( 0,   0,    0,  0,   0,   0,    0,    0,   r_m,   1,    0,    1,    0,    0,   0,   m_x, 1,    1,    0,    1,    0,    0,    0,    0       );
+      STATE_EVICT_PREPARE:         cs( 0,   0,    0,  0,   0,   0,    0,    0,   r_x,   0,    1,    0,    1,    1,   1,   m_x, x,    0,    x,    0,    0,    0,    0,    0       );
+      STATE_EVICT_REQUEST:         cs( 0,   0,    1,  0,   0,   0,    0,    0,   r_x,   0,    0,    0,    0,    0,   0,   m_e, x,    0,    x,    0,    0,    0,    0,    0       );
+      STATE_EVICT_WAIT:            cs( 0,   0,    0,  1,   0,   0,    0,    0,   r_x,   0,    0,    0,    0,    0,   0,   m_x, x,    0,    x,    0,    0,    0,    0,    0       );
+      STATE_WAIT:                  cs( 0,   1,    0,  0,   0,   0,    0,    0,   r_x,   0,    0,    0,    0,    0,   0,   m_x, x,    0,    x,    0,    0,    0,    0,    0       );
+      STATE_EXTRA_WAIT:            cs( 0,   0,    0,  0,   0,   1,    0,    0,   r_x,   0,    0,    0,    0,    0,   0,   m_x, x,    0,    x,    0,    2'd0, 1,    0,    0       );
 
     endcase
   end

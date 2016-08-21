@@ -37,6 +37,8 @@ module plab5_mcore_MemReqMsgToNetMsg
   // single cache/mem bank mode
 
   parameter p_single_bank = 0,
+  
+  parameter p_cohere_net = 0,
 
   // remaining parameters are not meant to be set from outside
 
@@ -87,7 +89,8 @@ module plab5_mcore_MemReqMsgToNetMsg
                         (p_net_src == 1) ? {1'b0, mem_addr[c_dest_addr_msb:c_dest_addr_lsb+1]} :
                         (p_net_src == 2) ? {1'b1, mem_addr[c_dest_addr_msb:c_dest_addr_lsb+1]} :
                                            {1'b1, mem_addr[c_dest_addr_msb:c_dest_addr_lsb+1]} ;
-  assign net_dest = p_single_bank ? 0 : net_dest_pre;
+  assign net_dest = p_single_bank ? 0 : 
+                    p_cohere_net  ? mem_msg_opaque[1:0] : net_dest_pre;
 
   // we use high bits of the opaque field to put the destination info
 

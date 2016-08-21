@@ -117,6 +117,8 @@
 `define VC_MEM_REQ_MSG_TYPE_AMO_AND    3'd4
 `define VC_MEM_REQ_MSG_TYPE_AMO_OR     3'd5
 `define VC_MEM_REQ_MSG_TYPE_X          3'dx
+`define VC_MEM_REQ_MSG_TYPE_GETM       3'd7
+`define VC_MEM_REQ_MSG_TYPE_PUTM       3'd6
 
 `define VC_MEM_REQ_MSG_TYPE_MSB(o_,a_,d_)                               \
   (   `VC_MEM_REQ_MSG_OPAQUE_MSB(o_,a_,d_)                              \

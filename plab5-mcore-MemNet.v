@@ -19,6 +19,8 @@ module plab5_mcore_MemNet
   parameter p_num_ports         = 4,
 
   parameter p_single_bank       = 0,
+  
+  parameter p_cohere_net        = 0,
 
   parameter o = p_mem_opaque_nbits,
   parameter a = p_mem_addr_nbits,
@@ -193,7 +195,8 @@ module plab5_mcore_MemNet
     .p_mem_data_nbits     (p_mem_data_nbits),
 
     .p_net_opaque_nbits   (c_net_opaque_nbits),
-    .p_net_srcdest_nbits  (c_net_srcdest_nbits)
+    .p_net_srcdest_nbits  (c_net_srcdest_nbits),
+    .p_cohere_net         (p_cohere_net)
   )
   cache_mem_msg_to_net_msg_0
   (
@@ -267,7 +270,8 @@ module plab5_mcore_MemNet
     .p_mem_data_nbits     (p_mem_data_nbits),
 
     .p_net_opaque_nbits   (c_net_opaque_nbits),
-    .p_net_srcdest_nbits  (c_net_srcdest_nbits)
+    .p_net_srcdest_nbits  (c_net_srcdest_nbits),
+    .p_cohere_net         (p_cohere_net)
   )
   cache_mem_msg_to_net_msg_1
   (
@@ -341,7 +345,8 @@ module plab5_mcore_MemNet
     .p_mem_data_nbits     (p_mem_data_nbits),
 
     .p_net_opaque_nbits   (c_net_opaque_nbits),
-    .p_net_srcdest_nbits  (c_net_srcdest_nbits)
+    .p_net_srcdest_nbits  (c_net_srcdest_nbits),
+    .p_cohere_net         (p_cohere_net)
   )
   cache_mem_msg_to_net_msg_2
   (
@@ -415,7 +420,8 @@ module plab5_mcore_MemNet
     .p_mem_data_nbits     (p_mem_data_nbits),
 
     .p_net_opaque_nbits   (c_net_opaque_nbits),
-    .p_net_srcdest_nbits  (c_net_srcdest_nbits)
+    .p_net_srcdest_nbits  (c_net_srcdest_nbits),
+    .p_cohere_net         (p_cohere_net)
   )
   cache_mem_msg_to_net_msg_3
   (

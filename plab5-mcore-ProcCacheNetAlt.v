@@ -183,6 +183,66 @@ module plab5_mcore_ProcCacheNetAlt
   wire           {D1} dcache_net_resp_out_val_3;
   wire           {D1} dcache_net_resp_out_rdy_3;
   
+  wire [mrq-1:0] {D0} dcache_net_cohere_req_in_msg_0;
+  wire           {D0} dcache_net_cohere_req_in_val_0;
+  wire           {D0} dcache_net_cohere_req_in_rdy_0;
+  
+  wire [mrq-1:0] {D0} dcache_net_cohere_req_in_msg_1;
+  wire           {D0} dcache_net_cohere_req_in_val_1;
+  wire           {D0} dcache_net_cohere_req_in_rdy_1;
+  
+  wire [mrq-1:0] {D1} dcache_net_cohere_req_in_msg_2;
+  wire           {D1} dcache_net_cohere_req_in_val_2;
+  wire           {D1} dcache_net_cohere_req_in_rdy_2;
+  
+  wire [mrq-1:0] {D1} dcache_net_cohere_req_in_msg_3;
+  wire           {D1} dcache_net_cohere_req_in_val_3;
+  wire           {D1} dcache_net_cohere_req_in_rdy_3;
+  
+  wire [mrq-1:0] {D0} dcache_net_cohere_req_out_msg_0;
+  wire           {D0} dcache_net_cohere_req_out_val_0;
+  
+  wire [mrq-1:0] {D0} dcache_net_cohere_req_out_msg_1;
+  wire           {D0} dcache_net_cohere_req_out_val_1;
+  
+  wire [mrq-1:0] {D1} dcache_net_cohere_req_out_msg_2;
+  wire           {D1} dcache_net_cohere_req_out_val_2;
+  
+  wire [mrq-1:0] {D1} dcache_net_cohere_req_out_msg_3;
+  wire           {D1} dcache_net_cohere_req_out_val_3;
+  
+  wire [mrq-1:0] {D0} dcache_net_cohere_resp_in_msg_0;
+  wire           {D0} dcache_net_cohere_resp_in_val_0;
+  wire           {D0} dcache_net_cohere_resp_in_rdy_0;
+  
+  wire [mrq-1:0] {D0} dcache_net_cohere_resp_in_msg_1;
+  wire           {D0} dcache_net_cohere_resp_in_val_1;
+  wire           {D0} dcache_net_cohere_resp_in_rdy_1;
+  
+  wire [mrq-1:0] {D1} dcache_net_cohere_resp_in_msg_2;
+  wire           {D1} dcache_net_cohere_resp_in_val_2;
+  wire           {D1} dcache_net_cohere_resp_in_rdy_2;
+  
+  wire [mrq-1:0] {D1} dcache_net_cohere_resp_in_msg_3;
+  wire           {D1} dcache_net_cohere_resp_in_val_3;
+  wire           {D1} dcache_net_cohere_resp_in_rdy_3;
+  
+  wire [mrq-1:0] {D0} dcache_net_cohere_resp_out_msg_0;
+  wire           {D0} dcache_net_cohere_resp_out_val_0;
+  wire           {D0} dcache_net_cohere_resp_out_rdy_0;
+  
+  wire [mrq-1:0] {D0} dcache_net_cohere_resp_out_msg_1;
+  wire           {D0} dcache_net_cohere_resp_out_val_1;
+  wire           {D0} dcache_net_cohere_resp_out_rdy_1;
+  
+  wire [mrq-1:0] {D1} dcache_net_cohere_resp_out_msg_2;
+  wire           {D1} dcache_net_cohere_resp_out_val_2;
+  wire           {D1} dcache_net_cohere_resp_out_rdy_2;
+  
+  wire [mrq-1:0] {D1} dcache_net_cohere_resp_out_msg_3;
+  wire           {D1} dcache_net_cohere_resp_out_val_3;
+  wire           {D1} dcache_net_cohere_resp_out_rdy_3;
+  
   wire [mrq-1:0] {D0} dcache_refill_net_req_in_msg_0;
   wire           {D0} dcache_refill_net_req_in_val_0;
   wire           {D0} dcache_refill_net_req_in_rdy_0;
@@ -430,6 +490,14 @@ module plab5_mcore_ProcCacheNetAlt
     .memresp_msg   (dcache_net_resp_out_msg_0),
     .memresp_val   (dcache_net_resp_out_val_0),
     .memresp_rdy   (dcache_net_resp_out_rdy_0),
+    
+    .coherereq_msg (dcache_net_cohere_req_out_msg_0),
+    .coherereq_val (dcache_net_cohere_req_out_val_0),
+    
+    .cohereresp_msg (dcache_net_cohere_resp_in_msg_0),
+    .cohereresp_val (dcache_net_cohere_resp_in_val_0),
+    .cohereresp_rdy (dcache_net_cohere_resp_in_rdy_0),
+    
     .sd            (0)
 
   );
@@ -439,7 +507,8 @@ module plab5_mcore_ProcCacheNetAlt
   #(
     .p_mem_nbytes         (p_dcache_nbytes),
     .p_num_banks          (p_num_cores),
-    .p_opaque_nbits       (o)
+    .p_opaque_nbits       (o),
+    .p_bank_id            (0)
   )
   l2_dcache_0
   (
@@ -461,6 +530,15 @@ module plab5_mcore_ProcCacheNetAlt
     .memresp_msg   (dcache_refill_net_resp_out_msg_0),
     .memresp_val   (dcache_refill_net_resp_out_val_0),
     .memresp_rdy   (dcache_refill_net_resp_out_rdy_0),
+    
+    .coherereq_msg (dcache_net_cohere_req_in_msg_0),
+    .coherereq_val (dcache_net_cohere_req_in_val_0),
+    .coherereq_rdy (dcache_net_cohere_req_in_rdy_0),
+    
+    .cohereresp_msg (dcache_net_cohere_resp_out_msg_0),
+    .cohereresp_val (dcache_net_cohere_resp_out_val_0),
+    .cohereresp_rdy (dcache_net_cohere_resp_out_rdy_0),
+    
     .sd            (0)
 
   );
@@ -575,6 +653,14 @@ module plab5_mcore_ProcCacheNetAlt
     .memresp_msg   (dcache_net_resp_out_msg_1),
     .memresp_val   (dcache_net_resp_out_val_1),
     .memresp_rdy   (dcache_net_resp_out_rdy_1),
+    
+    .coherereq_msg (dcache_net_cohere_req_out_msg_1),
+    .coherereq_val (dcache_net_cohere_req_out_val_1),
+    
+    .cohereresp_msg (dcache_net_cohere_resp_in_msg_1),
+    .cohereresp_val (dcache_net_cohere_resp_in_val_1),
+    .cohereresp_rdy (dcache_net_cohere_resp_in_rdy_1),
+    
     .sd            (0)
 
   );
@@ -584,7 +670,8 @@ module plab5_mcore_ProcCacheNetAlt
   #(
     .p_mem_nbytes         (p_dcache_nbytes),
     .p_num_banks          (p_num_cores),
-    .p_opaque_nbits       (o)
+    .p_opaque_nbits       (o),
+    .p_bank_id            (1)
   )
   l2_dcache_1
   (
@@ -606,6 +693,15 @@ module plab5_mcore_ProcCacheNetAlt
     .memresp_msg   (dcache_refill_net_resp_out_msg_1),
     .memresp_val   (dcache_refill_net_resp_out_val_1),
     .memresp_rdy   (dcache_refill_net_resp_out_rdy_1),
+    
+    .coherereq_msg (dcache_net_cohere_req_in_msg_1),
+    .coherereq_val (dcache_net_cohere_req_in_val_1),
+    .coherereq_rdy (dcache_net_cohere_req_in_rdy_1),
+    
+    .cohereresp_msg (dcache_net_cohere_resp_out_msg_1),
+    .cohereresp_val (dcache_net_cohere_resp_out_val_1),
+    .cohereresp_rdy (dcache_net_cohere_resp_out_rdy_1),
+
     .sd            (0)
 
   );
@@ -720,6 +816,14 @@ module plab5_mcore_ProcCacheNetAlt
     .memresp_msg   (dcache_net_resp_out_msg_2),
     .memresp_val   (dcache_net_resp_out_val_2),
     .memresp_rdy   (dcache_net_resp_out_rdy_2),
+    
+    .coherereq_msg (dcache_net_cohere_req_out_msg_2),
+    .coherereq_val (dcache_net_cohere_req_out_val_2),
+    
+    .cohereresp_msg (dcache_net_cohere_resp_in_msg_2),
+    .cohereresp_val (dcache_net_cohere_resp_in_val_2),
+    .cohereresp_rdy (dcache_net_cohere_resp_in_rdy_2),
+    
     .sd            (1)
 
   );
@@ -729,7 +833,8 @@ module plab5_mcore_ProcCacheNetAlt
   #(
     .p_mem_nbytes         (p_dcache_nbytes),
     .p_num_banks          (p_num_cores),
-    .p_opaque_nbits       (o)
+    .p_opaque_nbits       (o),
+    .p_bank_id            (2)
   )
   l2_dcache_2
   (
@@ -751,6 +856,15 @@ module plab5_mcore_ProcCacheNetAlt
     .memresp_msg   (dcache_refill_net_resp_out_msg_2),
     .memresp_val   (dcache_refill_net_resp_out_val_2),
     .memresp_rdy   (dcache_refill_net_resp_out_rdy_2),
+    
+    .coherereq_msg (dcache_net_cohere_req_in_msg_2),
+    .coherereq_val (dcache_net_cohere_req_in_val_2),
+    .coherereq_rdy (dcache_net_cohere_req_in_rdy_2),
+    
+    .cohereresp_msg (dcache_net_cohere_resp_out_msg_2),
+    .cohereresp_val (dcache_net_cohere_resp_out_val_2),
+    .cohereresp_rdy (dcache_net_cohere_resp_out_rdy_2),
+    
     .sd            (1)
 
   );
@@ -834,6 +948,14 @@ module plab5_mcore_ProcCacheNetAlt
     .memresp_msg   (icache_refill_net_resp_out_msg_3),
     .memresp_val   (icache_refill_net_resp_out_val_3),
     .memresp_rdy   (icache_refill_net_resp_out_rdy_3),
+    
+    .coherereq_msg (dcache_net_cohere_req_out_msg_3),
+    .coherereq_val (dcache_net_cohere_req_out_val_3),
+    
+    .cohereresp_msg (dcache_net_cohere_resp_in_msg_3),
+    .cohereresp_val (dcache_net_cohere_resp_in_val_3),
+    .cohereresp_rdy (dcache_net_cohere_resp_in_rdy_3),
+    
     .sd            (1)
   );
 
@@ -874,7 +996,8 @@ module plab5_mcore_ProcCacheNetAlt
   #(
     .p_mem_nbytes         (p_dcache_nbytes),
     .p_num_banks          (p_num_cores),
-    .p_opaque_nbits       (o)
+    .p_opaque_nbits       (o),
+    .p_bank_id            (3)
   )
   l2_dcache_3
   (
@@ -896,11 +1019,176 @@ module plab5_mcore_ProcCacheNetAlt
     .memresp_msg   (dcache_refill_net_resp_out_msg_3),
     .memresp_val   (dcache_refill_net_resp_out_val_3),
     .memresp_rdy   (dcache_refill_net_resp_out_rdy_3),
+    
+    .coherereq_msg (dcache_net_cohere_req_in_msg_3),
+    .coherereq_val (dcache_net_cohere_req_in_val_3),
+    .coherereq_rdy (dcache_net_cohere_req_in_rdy_3),
+    
+    .cohereresp_msg (dcache_net_cohere_resp_out_msg_3),
+    .cohereresp_val (dcache_net_cohere_resp_out_val_3),
+    .cohereresp_rdy (dcache_net_cohere_resp_out_rdy_3),
+    
     .sd            (1)
 
   );
 
   // =============================== On-Chip Networks ==========================
+  // coherent net
+  wire [mrq-1:0] {Domain cur_sd} dcache_net_cohere_req_out_msg_pre_0;
+  wire           {Domain cur_sd} dcache_net_cohere_req_out_val_pre_0;
+  wire           {Domain cur_sd} dcache_net_cohere_req_out_rdy_pre_0;
+  
+  wire [mrq-1:0] {Domain cur_sd} dcache_net_cohere_req_out_msg_pre_1;
+  wire           {Domain cur_sd} dcache_net_cohere_req_out_val_pre_1;
+  wire           {Domain cur_sd} dcache_net_cohere_req_out_rdy_pre_1;
+  
+  wire [mrq-1:0] {Domain cur_sd} dcache_net_cohere_req_out_msg_pre_2;
+  wire           {Domain cur_sd} dcache_net_cohere_req_out_val_pre_2;
+  wire           {Domain cur_sd} dcache_net_cohere_req_out_rdy_pre_2;
+  
+  wire [mrq-1:0] {Domain cur_sd} dcache_net_cohere_req_out_msg_pre_3;
+  wire           {Domain cur_sd} dcache_net_cohere_req_out_val_pre_3;
+  wire           {Domain cur_sd} dcache_net_cohere_req_out_rdy_pre_3;
+  
+  wire [mrq-1:0] {Domain cur_sd} dcache_net_cohere_resp_out_msg_pre_0;
+  wire           {Domain cur_sd} dcache_net_cohere_resp_out_val_pre_0;
+  wire           {Domain cur_sd} dcache_net_cohere_resp_out_rdy_pre_0;
+  
+  wire [mrq-1:0] {Domain cur_sd} dcache_net_cohere_resp_out_msg_pre_1;
+  wire           {Domain cur_sd} dcache_net_cohere_resp_out_val_pre_1;
+  wire           {Domain cur_sd} dcache_net_cohere_resp_out_rdy_pre_1;
+  
+  wire [mrq-1:0] {Domain cur_sd} dcache_net_cohere_resp_out_msg_pre_2;
+  wire           {Domain cur_sd} dcache_net_cohere_resp_out_val_pre_2;
+  wire           {Domain cur_sd} dcache_net_cohere_resp_out_rdy_pre_2;
+  
+  wire [mrq-1:0] {Domain cur_sd} dcache_net_cohere_resp_out_msg_pre_3;
+  wire           {Domain cur_sd} dcache_net_cohere_resp_out_val_pre_3;
+  wire           {Domain cur_sd} dcache_net_cohere_resp_out_rdy_pre_3;
+  
+  plab5_mcore_MemNet
+  #(
+    .p_mem_opaque_nbits   (o),
+    .p_mem_addr_nbits     (a),
+    .p_mem_data_nbits     (rd),
+
+    .p_num_ports          (p_num_cores),
+
+    .p_single_bank        (0),
+    .p_cohere_net         (1)
+  )
+  cohere_net
+  (
+    .clk          (clk),
+    .reset        (reset),
+
+    .req_in_msg_0   (dcache_net_cohere_req_in_msg_0),
+    .req_in_val_0   (dcache_net_cohere_req_in_val_0),
+    .req_in_rdy_0   (dcache_net_cohere_req_in_rdy_0),
+    .req_in_sd_0    (0),
+    
+    .req_in_msg_1   (dcache_net_cohere_req_in_msg_1),
+    .req_in_val_1   (dcache_net_cohere_req_in_val_1),
+    .req_in_rdy_1   (dcache_net_cohere_req_in_rdy_1),
+    .req_in_sd_1    (0),
+    
+    .req_in_msg_2   (dcache_net_cohere_req_in_msg_2),
+    .req_in_val_2   (dcache_net_cohere_req_in_val_2),
+    .req_in_rdy_2   (dcache_net_cohere_req_in_rdy_2),
+    .req_in_sd_2    (1),
+    
+    .req_in_msg_3   (dcache_net_cohere_req_in_msg_3),
+    .req_in_val_3   (dcache_net_cohere_req_in_val_3),
+    .req_in_rdy_3   (dcache_net_cohere_req_in_rdy_3),
+    .req_in_sd_3    (1),
+
+    .req_out_msg_0  (dcache_net_cohere_req_out_msg_pre_0),
+    .req_out_val_0  (dcache_net_cohere_req_out_val_pre_0),
+    .req_out_rdy_0  (dcache_net_cohere_req_out_rdy_pre_0),
+    
+    .req_out_msg_1  (dcache_net_cohere_req_out_msg_pre_1),
+    .req_out_val_1  (dcache_net_cohere_req_out_val_pre_1),
+    .req_out_rdy_1  (dcache_net_cohere_req_out_rdy_pre_1),
+    
+    .req_out_msg_2  (dcache_net_cohere_req_out_msg_pre_2),
+    .req_out_val_2  (dcache_net_cohere_req_out_val_pre_2),
+    .req_out_rdy_2  (dcache_net_cohere_req_out_rdy_pre_2),
+    
+    .req_out_msg_3  (dcache_net_cohere_req_out_msg_pre_3),
+    .req_out_val_3  (dcache_net_cohere_req_out_val_pre_3),
+    .req_out_rdy_3  (dcache_net_cohere_req_out_rdy_pre_3),
+
+    .resp_in_msg_0  (dcache_net_cohere_resp_in_msg_0),
+    .resp_in_val_0  (dcache_net_cohere_resp_in_val_0),
+    .resp_in_rdy_0  (dcache_net_cohere_resp_in_rdy_0),
+    .resp_in_sd_0   (0),
+    
+    .resp_in_msg_1  (dcache_net_cohere_resp_in_msg_1),
+    .resp_in_val_1  (dcache_net_cohere_resp_in_val_1),
+    .resp_in_rdy_1  (dcache_net_cohere_resp_in_rdy_1),
+    .resp_in_sd_1   (0),
+    
+    .resp_in_msg_2  (dcache_net_cohere_resp_in_msg_2),
+    .resp_in_val_2  (dcache_net_cohere_resp_in_val_2),
+    .resp_in_rdy_2  (dcache_net_cohere_resp_in_rdy_2),
+    .resp_in_sd_2   (1),
+    
+    .resp_in_msg_3  (dcache_net_cohere_resp_in_msg_3),
+    .resp_in_val_3  (dcache_net_cohere_resp_in_val_3),
+    .resp_in_rdy_3  (dcache_net_cohere_resp_in_rdy_3),
+    .resp_in_sd_3   (1),
+
+    .resp_out_msg_0 (dcache_net_cohere_resp_out_msg_pre_0),
+    .resp_out_val_0 (dcache_net_cohere_resp_out_val_pre_0),
+    .resp_out_rdy_0 (dcache_net_cohere_resp_out_rdy_pre_0),
+    
+    .resp_out_msg_1 (dcache_net_cohere_resp_out_msg_pre_1),
+    .resp_out_val_1 (dcache_net_cohere_resp_out_val_pre_1),
+    .resp_out_rdy_1 (dcache_net_cohere_resp_out_rdy_pre_1),
+    
+    .resp_out_msg_2 (dcache_net_cohere_resp_out_msg_pre_2),
+    .resp_out_val_2 (dcache_net_cohere_resp_out_val_pre_2),
+    .resp_out_rdy_2 (dcache_net_cohere_resp_out_rdy_pre_2),
+    
+    .resp_out_msg_3 (dcache_net_cohere_resp_out_msg_pre_3),
+    .resp_out_val_3 (dcache_net_cohere_resp_out_val_pre_3),
+    .resp_out_rdy_3 (dcache_net_cohere_resp_out_rdy_pre_3),
+    
+    .cur_sd         (cur_sd)
+  );
+  
+  assign dcache_net_cohere_req_out_msg_0 = (cur_sd == 0) ? dcache_net_cohere_req_out_msg_pre_0 : 0;
+  assign dcache_net_cohere_req_out_val_0 = (cur_sd == 0) ? dcache_net_cohere_req_out_val_pre_0 : 0;
+  assign dcache_net_cohere_req_out_rdy_pre_0 = (cur_sd == 0) ? dcache_net_req_out_rdy_0 : 0;
+  
+  assign dcache_net_cohere_req_out_msg_1 = (cur_sd == 0) ? dcache_net_cohere_req_out_msg_pre_1 : 0;
+  assign dcache_net_cohere_req_out_val_1 = (cur_sd == 0) ? dcache_net_cohere_req_out_val_pre_1 : 0;
+  assign dcache_net_cohere_req_out_rdy_pre_1 = (cur_sd == 0) ? dcache_net_req_out_rdy_1 : 0;
+  
+  assign dcache_net_cohere_req_out_msg_2 = (cur_sd == 1) ? dcache_net_cohere_req_out_msg_pre_2 : 0;
+  assign dcache_net_cohere_req_out_val_2 = (cur_sd == 1) ? dcache_net_cohere_req_out_val_pre_2 : 0;
+  assign dcache_net_cohere_req_out_rdy_pre_2 = (cur_sd == 1) ? dcache_net_req_out_rdy_2 : 0;
+  
+  assign dcache_net_cohere_req_out_msg_3 = (cur_sd == 1) ? dcache_net_cohere_req_out_msg_pre_3 : 0;
+  assign dcache_net_cohere_req_out_val_3 = (cur_sd == 1) ? dcache_net_cohere_req_out_val_pre_3 : 0;
+  assign dcache_net_cohere_req_out_rdy_pre_3 = (cur_sd == 1) ? dcache_net_req_out_rdy_3 : 0;
+  
+  assign dcache_net_cohere_resp_out_msg_0 = (cur_sd == 0) ? dcache_net_cohere_resp_out_msg_pre_0 : 0;
+  assign dcache_net_cohere_resp_out_val_0 = (cur_sd == 0) ? dcache_net_cohere_resp_out_val_pre_0 : 0;
+  assign dcache_net_cohere_resp_out_rdy_pre_0 = (cur_sd == 0) ? dcache_net_cohere_resp_out_rdy_0 : 0;
+  
+  assign dcache_net_cohere_resp_out_msg_1 = (cur_sd == 0) ? dcache_net_cohere_resp_out_msg_pre_1 : 0;
+  assign dcache_net_cohere_resp_out_val_1 = (cur_sd == 0) ? dcache_net_cohere_resp_out_val_pre_1 : 0;
+  assign dcache_net_cohere_resp_out_rdy_pre_1 = (cur_sd == 0) ? dcache_net_cohere_resp_out_rdy_1 : 0;
+  
+  assign dcache_net_cohere_resp_out_msg_2 = (cur_sd == 1) ? dcache_net_cohere_resp_out_msg_pre_2 : 0;
+  assign dcache_net_cohere_resp_out_val_2 = (cur_sd == 1) ? dcache_net_cohere_resp_out_val_pre_2 : 0;
+  assign dcache_net_cohere_resp_out_rdy_pre_2 = (cur_sd == 1) ? dcache_net_cohere_resp_out_rdy_2 : 0;
+  
+  assign dcache_net_cohere_resp_out_msg_3 = (cur_sd == 1) ? dcache_net_cohere_resp_out_msg_pre_3 : 0;
+  assign dcache_net_cohere_resp_out_val_3 = (cur_sd == 1) ? dcache_net_cohere_resp_out_val_pre_3 : 0;
+  assign dcache_net_cohere_resp_out_rdy_pre_3 = (cur_sd == 1) ? dcache_net_cohere_resp_out_rdy_3 : 0;
+  
   // dcache net ===============================================================
 
   wire [mrq-1:0] {Domain cur_sd} dcache_net_req_out_msg_pre_0;
@@ -1040,6 +1328,22 @@ module plab5_mcore_ProcCacheNetAlt
   assign dcache_net_req_out_msg_3 = (cur_sd == 1) ? dcache_net_req_out_msg_pre_3 : 0;
   assign dcache_net_req_out_val_3 = (cur_sd == 1) ? dcache_net_req_out_val_pre_3 : 0;
   assign dcache_net_req_out_rdy_pre_3 = (cur_sd == 1) ? dcache_net_req_out_rdy_3 : 0;
+  
+  assign dcache_net_resp_out_msg_0 = (cur_sd == 0) ? dcache_net_resp_out_msg_pre_0 : 0;
+  assign dcache_net_resp_out_val_0 = (cur_sd == 0) ? dcache_net_resp_out_val_pre_0 : 0;
+  assign dcache_net_resp_out_rdy_pre_0 = (cur_sd == 0) ? dcache_net_resp_out_rdy_0 : 0;
+  
+  assign dcache_net_resp_out_msg_1 = (cur_sd == 0) ? dcache_net_resp_out_msg_pre_1 : 0;
+  assign dcache_net_resp_out_val_1 = (cur_sd == 0) ? dcache_net_resp_out_val_pre_1 : 0;
+  assign dcache_net_resp_out_rdy_pre_1 = (cur_sd == 0) ? dcache_net_resp_out_rdy_1 : 0;
+  
+  assign dcache_net_resp_out_msg_2 = (cur_sd == 1) ? dcache_net_resp_out_msg_pre_2 : 0;
+  assign dcache_net_resp_out_val_2 = (cur_sd == 1) ? dcache_net_resp_out_val_pre_2 : 0;
+  assign dcache_net_resp_out_rdy_pre_2 = (cur_sd == 1) ? dcache_net_resp_out_rdy_2 : 0;
+  
+  assign dcache_net_resp_out_msg_3 = (cur_sd == 1) ? dcache_net_resp_out_msg_pre_3 : 0;
+  assign dcache_net_resp_out_val_3 = (cur_sd == 1) ? dcache_net_resp_out_val_pre_3 : 0;
+  assign dcache_net_resp_out_rdy_pre_3 = (cur_sd == 1) ? dcache_net_resp_out_rdy_3 : 0;
 
   // icache refill net =============================================================
   wire [mrs-1:0] {Domain cur_sd} icache_refill_net_resp_out_msg_pre_0;

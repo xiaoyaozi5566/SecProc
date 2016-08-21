@@ -26,7 +26,11 @@ module plab3_mem_BlockingCacheAltDpath
   parameter nblocks = size*8/clw,     // Number of blocks in the cache
   parameter idw     = $clog2(nblocks),// Short name for index width
 
-  parameter o = p_opaque_nbits
+  parameter o = p_opaque_nbits,
+  parameter ma = 32,
+  parameter md = 32,
+  parameter p_net_srcdest_nbits = 2,
+  parameter ns = p_net_srcdest_nbits
 )
 (
   input                                              {L} clk,
@@ -47,7 +51,12 @@ module plab3_mem_BlockingCacheAltDpath
   // Memory Response
 
   input [`VC_MEM_RESP_MSG_NBITS(o,clw)-1:0]          {Domain sd} memresp_msg,
-
+  
+  // Coherent Memory Request
+  input [`VC_MEM_REQ_MSG_NBITS(o,abw,clw)-1:0]       {Domain sd} coherereq_msg,
+  // Coherent Memory Response
+  output [`VC_MEM_REQ_MSG_NBITS(o,abw,clw)-1:0]      {Domain sd} cohereresp_msg,
+  
   // control signals (ctrl->dpath)
   input [1:0]                                        {Domain sd} amo_sel,
   input                                              {Domain sd} cachereq_en,
@@ -76,6 +85,13 @@ module plab3_mem_BlockingCacheAltDpath
   input                                              {L} sd
 );
 
+  // get where the request comes from
+  wire [p_opaque_nbits-1:0]      {Domain sd} mem_msg_opaque;
+  wire [p_net_srcdest_nbits-1:0] {Domain sd} net_src;
+  
+  assign mem_msg_opaque = coherereq_msg[`VC_MEM_REQ_MSG_OPAQUE_FIELD(o,ma,md)];
+  assign net_src = mem_msg_opaque[o-1 -: ns];
+  
   // Unpack cache request
 
   wire [`VC_MEM_REQ_MSG_ADDR_NBITS(o,abw,dbw)-1:0]   {Domain sd} cachereq_addr_out;
@@ -394,13 +410,15 @@ module plab3_mem_BlockingCacheAltDpath
   vc_MemReqMsgPack#(o,abw,clw) memreq_msg_pack
   (
     .type   (memreq_type),
-    .opaque (8'h00),
+    .opaque ({6'd0, net_src}),
     .addr   (memreq_addr),
     .len    (4'h0),
     .data   (read_data_reg_out),
     .msg    (memreq_msg),
     .sd     (sd)
   );
+  
+  assign cohereresp_msg = memreq_msg;
 
 endmodule
 

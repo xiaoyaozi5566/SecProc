@@ -17,13 +17,19 @@ module plab3_mem_BlockingCacheL2
 
   // opaque field from the cache and memory side
   parameter p_opaque_nbits = 8,
+  // distinguish different cache banks
+  parameter p_bank_id = 0,
 
   // local parameters not meant to be set from outside
   parameter dbw          = 128,             // Short name for data bitwidth
   parameter abw          = 32,             // Short name for addr bitwidth
   parameter clw          = 128,            // Short name for cacheline bitwidth
 
-  parameter o = p_opaque_nbits
+  parameter o = p_opaque_nbits,
+  parameter ma = 32,
+  parameter md = 32,
+  parameter p_net_srcdest_nbits = 2,
+  parameter ns = p_net_srcdest_nbits
 )
 (
   input                                         {L} clk,
@@ -52,12 +58,32 @@ module plab3_mem_BlockingCacheL2
   input [`VC_MEM_RESP_MSG_NBITS(o,clw)-1:0]     {Domain sd} memresp_msg,
   input                                         {Domain sd} memresp_val,
   output                                        {Domain sd} memresp_rdy,
+
+  // Coherent Memory Request
+  
+  output [`VC_MEM_REQ_MSG_NBITS(o,abw,clw)-1:0] {Domain sd} coherereq_msg,
+  output                                        {Domain sd} coherereq_val,
+  input                                         {Domain sd} coherereq_rdy,
+  
+  // Coherent Memory Response
+  
+  input [`VC_MEM_REQ_MSG_NBITS(o,abw,clw)-1:0]  {Domain sd} cohereresp_msg,
+  input                                         {Domain sd} cohereresp_val,
+  output                                        {Domain sd} cohereresp_rdy,      
+  
   input                                         {L} sd
 );
 
   // calculate the index shift amount based on number of banks
 
   localparam c_idx_shamt = $clog2( p_num_banks );
+  
+  // get where the request comes from
+  wire [p_opaque_nbits-1:0]      {Domain sd} mem_msg_opaque;
+  wire [p_net_srcdest_nbits-1:0] {Domain sd} net_src;
+  
+  assign mem_msg_opaque = cachereq_msg[`VC_MEM_REQ_MSG_OPAQUE_FIELD(o,ma,md)];
+  assign net_src = mem_msg_opaque[o-1 -: ns];
 
   //----------------------------------------------------------------------
   // Wires
@@ -81,6 +107,7 @@ module plab3_mem_BlockingCacheL2
   wire [$clog2(clw/dbw)-1:0]                    {Domain sd} read_byte_sel;
   wire [`VC_MEM_RESP_MSG_TYPE_NBITS(o,clw)-1:0] {Domain sd} memreq_type;
   wire [`VC_MEM_RESP_MSG_TYPE_NBITS(o,dbw)-1:0] {Domain sd} cacheresp_type;
+  wire [1:0]                                    {Domain sd} req_sel;
 
 
   // status signals (dpath->ctrl)
@@ -88,7 +115,22 @@ module plab3_mem_BlockingCacheL2
   wire [`VC_MEM_REQ_MSG_ADDR_NBITS(o,abw,dbw)-1:0] {Domain sd} cachereq_addr;
   wire                                             {Domain sd} tag_match_0;
   wire                                             {Domain sd} tag_match_1;
-
+  
+  wire [`VC_MEM_REQ_MSG_NBITS(o,abw,clw)-1:0]   {Domain sd} muxreq_msg;
+  
+  reg  [`VC_MEM_REQ_MSG_NBITS(o,abw,clw)-1:0]   {Domain sd} cachereq_msg_reg;
+  
+  assign muxreq_msg = (req_sel == 2'd0) ? cachereq_msg : 
+                      (req_sel == 2'd1) ? cohereresp_msg :
+                      (req_sel == 2'd2) ? cachereq_msg_reg : 0; 
+  
+  always @ (posedge clk) begin
+    if (cachereq_val == 1'b1) begin
+        cachereq_msg_reg <= cachereq_msg;
+    end
+  end
+  
+  wire [1:0] {Domain sd} cohere_dest;
   //----------------------------------------------------------------------
   // Control
   //----------------------------------------------------------------------
@@ -97,7 +139,9 @@ module plab3_mem_BlockingCacheL2
   #(
     .size                   (p_mem_nbytes),
     .p_idx_shamt            (c_idx_shamt),
-    .p_opaque_nbits         (p_opaque_nbits)
+    .p_opaque_nbits         (p_opaque_nbits),
+    .p_net_srcdest_nbits    (p_net_srcdest_nbits),
+    .p_bank_id              (p_bank_id)
   )
   ctrl
   (
@@ -123,6 +167,14 @@ module plab3_mem_BlockingCacheL2
 
    .memresp_val       (memresp_val),
    .memresp_rdy       (memresp_rdy),
+   
+   // Coherent Memory Request
+   .coherereq_val     (coherereq_val),
+   .coherereq_rdy     (coherereq_rdy),
+   
+   // Coherent Memory Response
+   .cohereresp_val    (cohereresp_val),
+   .cohereresp_rdy    (cohereresp_rdy),
 
    // control signals (ctrl->dpath)
    .amo_sel           (amo_sel),
@@ -142,12 +194,15 @@ module plab3_mem_BlockingCacheL2
    .read_byte_sel     (read_byte_sel),
    .memreq_type       (memreq_type),
    .cacheresp_type    (cacheresp_type),
+   .req_sel           (req_sel),
+   .cohere_dest       (cohere_dest),
 
    // status signals  (dpath->ctrl)
    .cachereq_type     (cachereq_type),
    .cachereq_addr     (cachereq_addr),
    .tag_match_0       (tag_match_0),
    .tag_match_1       (tag_match_1),
+   .net_src           (net_src),
    .sd                (sd)
   );
 
@@ -181,6 +236,10 @@ module plab3_mem_BlockingCacheL2
    // Memory Response
 
    .memresp_msg       (memresp_msg),
+   
+   // Memory Coherent Request
+   
+   .coherereq_val     (coherereq_val),
 
    // control signals (ctrl->dpath)
    .amo_sel           (amo_sel),
@@ -200,6 +259,7 @@ module plab3_mem_BlockingCacheL2
    .read_byte_sel     (read_byte_sel),
    .memreq_type       (memreq_type),
    .cacheresp_type    (cacheresp_type),
+   .cohere_dest       (cohere_dest),
 
    // status signals  (dpath->ctrl)
    .cachereq_type     (cachereq_type),

@@ -52,6 +52,18 @@ module plab3_mem_BlockingCacheAlt
   input [`VC_MEM_RESP_MSG_NBITS(o,clw)-1:0]     {Domain sd} memresp_msg,
   input                                         {Domain sd} memresp_val,
   output                                        {Domain sd} memresp_rdy,
+  
+  // Coherent Memory Request
+  
+  input [`VC_MEM_REQ_MSG_NBITS(o,abw,clw)-1:0]  {Domain sd} coherereq_msg,
+  input                                         {Domain sd} coherereq_val,
+  
+  // Coherent Memory Response
+  
+  output [`VC_MEM_RESP_MSG_NBITS(o,clw)-1:0]    {Domain sd} cohereresp_msg,
+  output                                        {Domain sd} cohereresp_val,
+  input                                         {Domain sd} cohereresp_rdy,
+  
   input                                         {L} sd
 );
 
@@ -81,6 +93,7 @@ module plab3_mem_BlockingCacheAlt
   wire [$clog2(clw/dbw)-1:0]                    {Domain sd} read_byte_sel;
   wire [`VC_MEM_RESP_MSG_TYPE_NBITS(o,clw)-1:0] {Domain sd} memreq_type;
   wire [`VC_MEM_RESP_MSG_TYPE_NBITS(o,dbw)-1:0] {Domain sd} cacheresp_type;
+  wire [1:0]                                    {Domain sd} req_sel;
 
 
   // status signals (dpath->ctrl)
@@ -89,6 +102,21 @@ module plab3_mem_BlockingCacheAlt
   wire                                             {Domain sd} tag_match_0;
   wire                                             {Domain sd} tag_match_1;
 
+  wire [`VC_MEM_REQ_MSG_NBITS(o,abw,clw)-1:0]   {Domain sd} muxreq_msg;
+  
+  reg  [`VC_MEM_REQ_MSG_NBITS(o,abw,clw)-1:0]   {Domain sd} coherereq_msg_reg;
+  
+  assign muxreq_msg = (req_sel == 2'd0) ? cachereq_msg : 
+                      (req_sel == 2'd1) ? coherereq_msg :
+                      (req_sel == 2'd2) ? coherereq_msg_reg : 0 ;
+  
+  always @ (posedge clk) begin
+    // store the msg in a register to process later
+    if (cachereq_val == 1'b1 && coherereq_val == 1'b1) begin
+        coherereq_msg_reg <= coherereq_msg;
+    end
+  end
+    
   //----------------------------------------------------------------------
   // Control
   //----------------------------------------------------------------------
@@ -124,6 +152,13 @@ module plab3_mem_BlockingCacheAlt
    .memresp_val       (memresp_val),
    .memresp_rdy       (memresp_rdy),
 
+   // Coherent Memory Request
+   .coherereq_val     (coherereq_val),
+   
+   // Coherent Memory Response
+   .cohereresp_val    (cohereresp_val),
+   .cohereresp_rdy    (cohereresp_rdy),
+   
    // control signals (ctrl->dpath)
    .amo_sel           (amo_sel),
    .cachereq_en       (cachereq_en),
@@ -142,6 +177,7 @@ module plab3_mem_BlockingCacheAlt
    .read_byte_sel     (read_byte_sel),
    .memreq_type       (memreq_type),
    .cacheresp_type    (cacheresp_type),
+   .req_sel           (req_sel),
 
    // status signals  (dpath->ctrl)
    .cachereq_type     (cachereq_type),
@@ -168,7 +204,7 @@ module plab3_mem_BlockingCacheAlt
 
    // Cache Request
 
-   .cachereq_msg      (cachereq_msg),
+   .cachereq_msg      (muxreq_msg),
 
    // Cache Response
 
@@ -181,6 +217,13 @@ module plab3_mem_BlockingCacheAlt
    // Memory Response
 
    .memresp_msg       (memresp_msg),
+   
+   // Memory Coherent Request
+   .coherereq_msg     (coherereq_msg),
+   
+   // Memory Coherent Response
+   
+   .cohereresp_msg    (cohereresp_msg),
 
    // control signals (ctrl->dpath)
    .amo_sel           (amo_sel),

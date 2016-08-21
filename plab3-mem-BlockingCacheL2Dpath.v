@@ -47,6 +47,9 @@ module plab3_mem_BlockingCacheL2Dpath
   // Memory Response
 
   input [`VC_MEM_RESP_MSG_NBITS(o,clw)-1:0]          {Domain sd} memresp_msg,
+  
+  // Coherent memory requests
+  output [`VC_MEM_REQ_MSG_NBITS(o,abw,clw)-1:0]      {Domain sd} coherereq_msg,
 
   // control signals (ctrl->dpath)
   input [1:0]                                        {Domain sd} amo_sel,
@@ -67,6 +70,7 @@ module plab3_mem_BlockingCacheL2Dpath
   input [$clog2(clw/dbw)-1:0]                        {Domain sd} read_byte_sel,
   input [`VC_MEM_RESP_MSG_TYPE_NBITS(o,clw)-1:0]     {Domain sd} memreq_type,
   input [`VC_MEM_RESP_MSG_TYPE_NBITS(o,dbw)-1:0]     {Domain sd} cacheresp_type,
+  input [1:0]                                        {Domain sd} cohere_dest,
 
   // status signals (dpath->ctrl)
   output [`VC_MEM_REQ_MSG_TYPE_NBITS(o,abw,dbw)-1:0] {Domain sd} cachereq_type,
@@ -369,13 +373,15 @@ module plab3_mem_BlockingCacheL2Dpath
   vc_MemReqMsgPack#(o,abw,clw) memreq_msg_pack
   (
     .type   (memreq_type),
-    .opaque (8'h00),
+    .opaque ({6'd0, cohere_dest}),
     .addr   (memreq_addr),
     .len    (4'h0),
     .data   (read_data_reg_out),
     .msg    (memreq_msg),
     .sd     (sd)
   );
+  
+  assign coherereq_msg = memreq_msg;
 
 endmodule
 
